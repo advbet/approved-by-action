@@ -16,8 +16,10 @@ const run = async () => {
   const octokit = github.getOctokit(token);
   const context = github.context;
 
-  // core.info(octokit);
-  // core.info(octokit.pulls);
+  const {data: reviewers } = await octokit.rest.pulls.requestReviewers({
+    ...context.repo,
+    pull_number: context.payload.pull_request.number,
+  })
 
   const {data: reviews} = await octokit.rest.pulls.listReviews({
     ...context.repo,
@@ -25,24 +27,37 @@ const run = async () => {
     per_page: 100,
   });
 
-  core.debug(reviews)
-  core.debug(`reviews length: ${reviews.length}`)
+  core.debug(reviewers);
+  core.debug(reviews);
 
-
-  const approvedReviews = reviews.filter(review => review.state.toLowerCase() !== 'approved')
-
-  if (approvedReviews.length > 0) {
-    let text = '';
-    approvedReviews.forEach(review => {
-      const login = review.user.login;
-      if (login in employees) {
-        text += `\nApproved-by: ${employees[login]} (${login})`
-      } else {
-        text += `\nApproved-by: ${login}`
-      }
-    })
-    core.info(text);
-  }
+  // core.debug(reviews);
+  // core.debug(`reviews length: ${reviews.length}`);
+  //
+  // let latestReviews = reviews
+  //   .reverse()
+  //   .filter(review => review.user?.id !== context.payload.pull_request.user.id)
+  //   .filter(review => review.state.toLowerCase() !== 'commented')
+  //   .filter((review, index, array) => {
+  //     // unique
+  //     return array.findIndex(x => review.user?.id === x.user?.id) === index
+  //   })
+  //
+  //
+  //
+  // const approvedReviews = reviews.filter(review => review.state.toLowerCase() !== 'approved')
+  //
+  // if (approvedReviews.length > 0) {
+  //   let text = '';
+  //   approvedReviews.forEach(review => {
+  //     const login = review.user.login;
+  //     if (login in employees) {
+  //       text += `\nApproved-by: ${employees[login]} (${login})`
+  //     } else {
+  //       text += `\nApproved-by: ${login}`
+  //     }
+  //   })
+  //   core.debug(text);
+  // }
 };
 
 run()
