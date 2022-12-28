@@ -9734,10 +9734,11 @@ __nccwpck_require__.r(__webpack_exports__);
 
 
 const run = async () => {
-  const token = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('github-token', { required: false }) || process.env.GITHUB_TOKEN;
+  const token = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('GITHUB_TOKEN', { required: true });
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('github token: ' + token);
 
   if (!token) {
-    throw new Error('No GITHUB_TOKEN found');
+    throw new Error('No GITHUB_TOKEN found in input');
   }
 
   const octokit = _actions_github__WEBPACK_IMPORTED_MODULE_1__.getOctokit(token);

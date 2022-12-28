@@ -3,9 +3,10 @@ import * as github from '@actions/github'
 
 const run = async () => {
   const token = core.getInput('GITHUB_TOKEN', { required: true });
+  core.info('github token: ' + token);
 
   if (!token) {
-    throw new Error('No GITHUB_TOKEN found');
+    throw new Error('No GITHUB_TOKEN found in input');
   }
 
   const octokit = github.getOctokit(token);
