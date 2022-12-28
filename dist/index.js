@@ -9740,7 +9740,6 @@ const employees = {
 
 const run = async () => {
   const token = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('GITHUB_TOKEN', { required: true });
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('github token: ' + token);
 
   if (!token) {
     throw new Error('No GITHUB_TOKEN found in input');
@@ -9754,8 +9753,11 @@ const run = async () => {
 
   const reviews = await octokit.rest.pulls.listReviews({
     ...context.repo,
-    pull_number: context.payload.pull_request.number
+    pull_number: context.payload.pull_request.number,
+    per_page: 100,
   });
+
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`reviews: ${reviews.length}`)
 
 
   const approvedReviews = reviews.filter(review => review.state.toLowerCase() !== 'approved')
@@ -9765,9 +9767,9 @@ const run = async () => {
     approvedReviews.forEach(review => {
       const login = review.user.login;
       if (login in employees) {
-        text += `Approved-by: ${employees[login]} (${login})\n`
+        text += `\nApproved-by: ${employees[login]} (${login})`
       } else {
-        text += `Approved-by: ${login}\n`
+        text += `\nApproved-by: ${login}`
       }
     })
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(text);
