@@ -16,12 +16,13 @@ const run = async () => {
   const octokit = github.getOctokit(token);
   const context = github.context;
 
-  const {requested_reviewers: requestedReviewers, requested_teams: requestedTeams} = await octokit.rest.pulls.get({
+  const pull = await octokit.rest.pulls.get({
     ...context.repo,
     pull_number: context.payload.pull_request.number,
   })
-  core.debug('requestedReviewers:' + requestedReviewers);
-  core.debug('requestedTeams:' + requestedTeams);
+  core.debug(pull)
+  // core.debug('requestedReviewers:' + requestedReviewers);
+  // core.debug(res:' + requestedTeams);
 
 
   // const res = await octokit.rest.pulls.requestReviewers({
