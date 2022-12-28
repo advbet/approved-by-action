@@ -9807,6 +9807,9 @@ const run = async () => {
     updatePR = true;
   }
 
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`approveByIndex: ${approveByIndex}`);
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`approveByBody length: ${approveByBody.length}`);
+
   if (updatePR) {
     await octokit.rest.pulls.update({
       ...context.repo,
