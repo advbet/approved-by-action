@@ -19,7 +19,7 @@ const run = async () => {
   // core.info(octokit);
   // core.info(octokit.pulls);
 
-  const reviews = await octokit.rest.pulls.listReviews({
+  const {data: reviews} = await octokit.rest.pulls.listReviews({
     ...context.repo,
     pull_number: context.payload.pull_request.number,
     per_page: 100,
