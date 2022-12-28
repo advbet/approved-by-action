@@ -12,6 +12,9 @@ const run = async () => {
   const octokit = github.getOctokit(token);
   const context = github.context;
 
+  core.info(octokit);
+  core.info(octokit.pulls);
+
   const reviews = await octokit.pulls.listReviews({
     ...context.repo,
     pull_number: context.payload.pull_request.number
