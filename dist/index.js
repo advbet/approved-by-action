@@ -9752,17 +9752,15 @@ const run = async () => {
     ...context.repo,
     pull_number: context.payload.pull_request.number,
   })
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(pull.requested_reviewers)
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(pull.requested_reviewers);
   _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(pull.requested_teams);
 
 
-  // const res = await octokit.rest.pulls.requestReviewers({
-  //   ...context.repo,
-  //   pull_number: context.payload.pull_request.number,
-  // });
-  // core.debug(res);
-  // core.debug(requestedUsers);
-  // core.debug(requestedTeams);
+  const {data: requestedReviewers} = await octokit.rest.pulls.requestReviewers({
+    ...context.repo,
+    pull_number: context.payload.pull_request.number,
+  })
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(requestedReviewers);
 
   // const {data: reviews} = await octokit.rest.pulls.listReviews({
   //   ...context.repo,
