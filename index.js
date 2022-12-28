@@ -16,6 +16,13 @@ const run = async () => {
   const octokit = github.getOctokit(token);
   const context = github.context;
 
+  const {requested_reviewers: requestedReviewers} = await octokit.rest.pulls.get({
+    ...context.repo,
+    pull_number: context.payload.pull_request.number,
+  })
+  core.debug(requestedReviewers);
+
+
   // const res = await octokit.rest.pulls.requestReviewers({
   //   ...context.repo,
   //   pull_number: context.payload.pull_request.number,
@@ -24,12 +31,12 @@ const run = async () => {
   // core.debug(requestedUsers);
   // core.debug(requestedTeams);
 
-  const {data: reviews} = await octokit.rest.pulls.listReviews({
-    ...context.repo,
-    pull_number: context.payload.pull_request.number,
-    per_page: 100,
-  });
-  core.debug(reviews);
+  // const {data: reviews} = await octokit.rest.pulls.listReviews({
+  //   ...context.repo,
+  //   pull_number: context.payload.pull_request.number,
+  //   per_page: 100,
+  // });
+  // core.debug(reviews);
 
   // core.debug(reviews);
   // core.debug(`reviews length: ${reviews.length}`);
