@@ -9757,7 +9757,8 @@ const run = async () => {
     per_page: 100,
   });
 
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`reviews: ${reviews.length}`)
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(reviews)
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`reviews length: ${reviews.length}`)
 
 
   const approvedReviews = reviews.filter(review => review.state.toLowerCase() !== 'approved')

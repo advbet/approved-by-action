@@ -25,7 +25,8 @@ const run = async () => {
     per_page: 100,
   });
 
-  core.debug(`reviews: ${reviews.length}`)
+  core.debug(reviews)
+  core.debug(`reviews length: ${reviews.length}`)
 
 
   const approvedReviews = reviews.filter(review => review.state.toLowerCase() !== 'approved')
