@@ -30,6 +30,37 @@ const run = async () => {
   })
   core.debug(requestedReviewers);
 
+  if (pull.requested_reviewers.length !== requestedReviewers.users.length) {
+    const requestedReviews = pull.requested_reviewers.map(user => {
+      return user.login;
+    });
+
+    const notApproved = requestedReviewers.users.map(user => {
+      return user.login;
+    });
+
+    const approved = requestedReviews.filter(login => {
+      return !notApproved.includes(login);
+    });
+
+    let text = '';
+    approved.forEach(login => {
+      if (login in employees) {
+        text += `\nApproved-by: ${employees[login]} (${login})`
+      } else {
+        text += `\nApproved-by: ${login}`
+      }
+    });
+
+    core.debug(text)
+
+    // const approvedUsers = pull.requested_reviewers.filter(reviewer => {
+    //   if (awaitingApproval.includes(reviewer.login)) {
+    //
+    //   }
+    // });
+  }
+
   // const {data: reviews} = await octokit.rest.pulls.listReviews({
   //   ...context.repo,
   //   pull_number: context.payload.pull_request.number,
