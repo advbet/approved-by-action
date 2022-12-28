@@ -1,6 +1,11 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 
+const employees = {
+  'aponad': 'Anton P.',
+  'eeedvisss': 'Edvinas B.'
+}
+
 const run = async () => {
   const token = core.getInput('GITHUB_TOKEN', { required: true });
   core.info('github token: ' + token);
@@ -20,7 +25,21 @@ const run = async () => {
     pull_number: context.payload.pull_request.number
   });
 
-  core.info(reviews);
+
+  const approvedReviews = reviews.filter(review => review.state.toLowerCase() !== 'approved')
+
+  if (approvedReviews.length > 0) {
+    let text = '';
+    approvedReviews.forEach(review => {
+      const login = review.user.login;
+      if (login in employees) {
+        text += `Approved-by: ${employees[login]} (${login})\n`
+      } else {
+        text += `Approved-by: ${login}\n`
+      }
+    })
+    core.info(text);
+  }
 };
 
 run()

@@ -9733,6 +9733,11 @@ __nccwpck_require__.r(__webpack_exports__);
 
 
 
+const employees = {
+  'aponad': 'Anton P.',
+  'eeedvisss': 'Edvinas B.'
+}
+
 const run = async () => {
   const token = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('GITHUB_TOKEN', { required: true });
   _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('github token: ' + token);
@@ -9752,7 +9757,21 @@ const run = async () => {
     pull_number: context.payload.pull_request.number
   });
 
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(reviews);
+
+  const approvedReviews = reviews.filter(review => review.state.toLowerCase() !== 'approved')
+
+  if (approvedReviews.length > 0) {
+    let text = '';
+    approvedReviews.forEach(review => {
+      const login = review.user.login;
+      if (login in employees) {
+        text += `Approved-by: ${employees[login]} (${login})\n`
+      } else {
+        text += `Approved-by: ${login}\n`
+      }
+    })
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(text);
+  }
 };
 
 run()
