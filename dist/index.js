@@ -9794,10 +9794,12 @@ const run = async () => {
   if (approveByBody.length > 0) {
     let body = pull.body;
     let index = body.search(/Approved-by/);
+    approveByBody = `\n${approveByBody}`;
+
     if (index > -1) {
       body = body.replace('/Approved-by\:.*/', approveByBody)
     } else {
-      body += `\n${approveByBody}`;
+      body += approveByBody;
     }
 
     await octokit.rest.pulls.update({
