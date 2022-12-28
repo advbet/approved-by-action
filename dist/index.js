@@ -9749,10 +9749,10 @@ const run = async () => {
   const octokit = _actions_github__WEBPACK_IMPORTED_MODULE_1__.getOctokit(token);
   const context = _actions_github__WEBPACK_IMPORTED_MODULE_1__.context;
 
-  // const {data: pull} = await octokit.rest.pulls.get({
-  //   ...context.repo,
-  //   pull_number: context.payload.pull_request.number,
-  // })
+  const {data: pull} = await octokit.rest.pulls.get({
+    ...context.repo,
+    pull_number: context.payload.pull_request.number,
+  });
   // core.debug(pull.requested_reviewers);
   // core.debug(pull.requested_teams);
   //
@@ -9777,20 +9777,35 @@ const run = async () => {
       return array.findIndex(x => review.user?.id === x.user?.id) === index
     });
 
+  let approveByBody = '';
   latestReviews.forEach(review => {
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`${review.user?.login} is ${review.state.toLowerCase()}.`)
 
-    let text = '';
     if (review.state.toLowerCase() === 'approved') {
       const login = review.user?.login;
       if (login in employees) {
-        text += `\nApproved-by: ${employees[login]} (${login})`
+        approveByBody += `\nApproved-by: ${employees[login]} (${login})`
       } else {
-        text += `\nApproved-by: ${login}`
+        approveByBody += `\nApproved-by: ${login}`
       }
     }
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(text);
   });
+
+  if (approveByBody.length > 0) {
+    let body = pull.body;
+    let index = body.search(/Approved-by/);
+    if (index > -1) {
+      body = body.replace('/Approved-by\:.*/', approveByBody)
+    } else {
+      body += approveByBody;
+    }
+
+    await octokit.rest.pulls.update({
+      ...context.repo,
+      pull_number: context.payload.pull_request.number,
+      body,
+    });
+  }
 
   // if (pull.requested_reviewers.length !== requestedReviewers.users.length) {
   //   const requestedReviews = pull.requested_reviewers.map(user => {
