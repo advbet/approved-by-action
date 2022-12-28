@@ -1,0 +1,11 @@
+name: 'Approved by'
+description: 'Adds approved by to PR description'
+
+inputs:
+  GITHUB_TOKEN:
+    description: "Github token of the repository (automatically created by Github)"
+    required: true
+
+runs:
+  using: 'node16'
+  main: 'index.js'
