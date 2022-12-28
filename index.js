@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 
 const run = async () => {
-  const token = core.getInput('github-token', { required: false }) || process.env.GITHUB_TOKEN;
+  const token = core.getInput('GITHUB_TOKEN', { required: true });
 
   if (!token) {
     throw new Error('No GITHUB_TOKEN found');
