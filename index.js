@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 
 const employees = {
+  'adv-bet': 'ADV',
   'aponad': 'Anton P.',
   'eeedvisss': 'Edvinas B.'
 }
