@@ -16,50 +16,73 @@ const run = async () => {
   const octokit = github.getOctokit(token);
   const context = github.context;
 
-  const {data: pull} = await octokit.rest.pulls.get({
+  // const {data: pull} = await octokit.rest.pulls.get({
+  //   ...context.repo,
+  //   pull_number: context.payload.pull_request.number,
+  // })
+  // core.debug(pull.requested_reviewers);
+  // core.debug(pull.requested_teams);
+  //
+  //
+  // const {data: requestedReviewers} = await octokit.rest.pulls.listRequestedReviewers({
+  //   ...context.repo,
+  //   pull_number: context.payload.pull_request.number,
+  // })
+  // core.debug(requestedReviewers);
+
+  const {data: reviews} = await octokit.rest.pulls.listReviews({
     ...context.repo,
     pull_number: context.payload.pull_request.number,
-  })
-  core.debug(pull.requested_reviewers);
-  core.debug(pull.requested_teams);
+    per_page: 100,
+  });
 
-
-  const {data: requestedReviewers} = await octokit.rest.pulls.listRequestedReviewers({
-    ...context.repo,
-    pull_number: context.payload.pull_request.number,
-  })
-  core.debug(requestedReviewers);
-
-  if (pull.requested_reviewers.length !== requestedReviewers.users.length) {
-    const requestedReviews = pull.requested_reviewers.map(user => {
-      return user.login;
+  let latestReviews = reviews
+    .reverse()
+    .filter(review => review.state.toLowerCase() !== 'commented')
+    .filter((review, index, array) => {
+      // https://dev.to/kannndev/filter-an-array-for-unique-values-in-javascript-1ion
+      return array.findIndex(x => review.user?.id === x.user?.id) === index
     });
 
-    const notApproved = requestedReviewers.users.map(user => {
-      return user.login;
-    });
-
-    const approved = requestedReviews.filter(login => {
-      return !notApproved.includes(login);
-    });
+  latestReviews.forEach(review => {
+    core.debug(`${review.user?.login} is ${review.state.toLowerCase()}.`)
 
     let text = '';
-    approved.forEach(login => {
+    if (review.state.toLowerCase() === 'approved') {
+      const login = review.user?.login;
       if (login in employees) {
         text += `\nApproved-by: ${employees[login]} (${login})`
       } else {
         text += `\nApproved-by: ${login}`
       }
-    });
+    }
+    core.debug(text);
+  });
 
-    core.debug(text)
-
-    // const approvedUsers = pull.requested_reviewers.filter(reviewer => {
-    //   if (awaitingApproval.includes(reviewer.login)) {
-    //
-    //   }
-    // });
-  }
+  // if (pull.requested_reviewers.length !== requestedReviewers.users.length) {
+  //   const requestedReviews = pull.requested_reviewers.map(user => {
+  //     return user.login;
+  //   });
+  //
+  //   const notApproved = requestedReviewers.users.map(user => {
+  //     return user.login;
+  //   });
+  //
+  //   const approved = requestedReviews.filter(login => {
+  //     return !notApproved.includes(login);
+  //   });
+  //
+  //   let text = '';
+  //   approved.forEach(login => {
+  //     if (login in employees) {
+  //       text += `\nApproved-by: ${employees[login]} (${login})`
+  //     } else {
+  //       text += `\nApproved-by: ${login}`
+  //     }
+  //   });
+  //
+  //   core.debug(text)
+  // }
 
   // const {data: reviews} = await octokit.rest.pulls.listReviews({
   //   ...context.repo,
