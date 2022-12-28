@@ -46,8 +46,8 @@ const run = async () => {
     });
 
   let approveByBody = '';
-  let body = pull.body;
-  let approveByIndex = body.search(/Approved-by/);
+  let pullBody = pull.body;
+  let approveByIndex = pullBody.search(/Approved-by/);
   let updatePR = false;
 
   latestReviews.forEach(review => {
@@ -65,13 +65,13 @@ const run = async () => {
 
   // body with "Approved-by" already set
   if (approveByIndex > -1) {
-    body = body.replace('/\nApproved-by\:.*/', approveByBody);
+    pullBody = pullBody.replace('/\nApproved-by\:.*/', approveByBody);
     updatePR = true;
   }
 
   // body without "Approved-by"
   if (approveByBody.length > 0 && approveByIndex === -1) {
-    body += `\n${approveByBody}`;
+    pullBody += `\n${approveByBody}`;
     updatePR = true;
   }
 
@@ -79,7 +79,7 @@ const run = async () => {
     await octokit.rest.pulls.update({
       ...context.repo,
       pull_number: context.payload.pull_request.number,
-      body,
+      body: pullBody,
     });
   }
 
