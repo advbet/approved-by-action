@@ -9744,10 +9744,10 @@ const run = async () => {
   const octokit = _actions_github__WEBPACK_IMPORTED_MODULE_1__.getOctokit(token);
   const context = _actions_github__WEBPACK_IMPORTED_MODULE_1__.context;
 
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(octokit);
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(octokit.pulls);
+  // core.info(octokit);
+  // core.info(octokit.pulls);
 
-  const reviews = await octokit.pulls.listReviews({
+  const reviews = await octokit.rest.pulls.listReviews({
     ...context.repo,
     pull_number: context.payload.pull_request.number
   });
