@@ -9797,7 +9797,7 @@ const run = async () => {
     if (index > -1) {
       body = body.replace('/Approved-by\:.*/', approveByBody)
     } else {
-      body += approveByBody;
+      body += `\n${approveByBody}`;
     }
 
     await octokit.rest.pulls.update({
