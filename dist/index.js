@@ -9756,7 +9756,7 @@ const run = async () => {
   _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(pull.requested_teams);
 
 
-  const {data: requestedReviewers} = await octokit.rest.pulls.requestReviewers({
+  const {data: requestedReviewers} = await octokit.rest.pulls.listRequestedReviewers({
     ...context.repo,
     pull_number: context.payload.pull_request.number,
   })
