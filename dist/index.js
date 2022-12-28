@@ -9748,11 +9748,12 @@ const run = async () => {
   const octokit = _actions_github__WEBPACK_IMPORTED_MODULE_1__.getOctokit(token);
   const context = _actions_github__WEBPACK_IMPORTED_MODULE_1__.context;
 
-  const {users: reviewers} = await octokit.rest.pulls.requestReviewers({
+  const {users: requestedUsers, teams: requestedTeams} = await octokit.rest.pulls.requestReviewers({
     ...context.repo,
     pull_number: context.payload.pull_request.number,
   });
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(reviewers);
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(requestedUsers);
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(requestedTeams);
 
   const {data: reviews} = await octokit.rest.pulls.listReviews({
     ...context.repo,
