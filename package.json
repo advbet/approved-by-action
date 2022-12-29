@@ -2,8 +2,7 @@
   "name": "approved-by-action",
   "main": "index.js",
   "scripts": {
-    "lint": "standard --fix index.js",
-    "build": "npm run lint && ncc build index.js -o dist --source-map --license licenses.txt"
+    "build": "standard --fix index.js && ncc build index.js -o dist --source-map --license licenses.txt"
   },
   "dependencies": {
     "@actions/core": "^1.10.0",
