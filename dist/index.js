@@ -9768,12 +9768,12 @@ const run = async () => {
   const approveByIndex = pullBody.search(/Approved-by/)
 
   for (const review of latestReviews) {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`${review.user?.login} is ${review.state.toLowerCase()}.`)
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Latest ${review.user?.login} review '${review.state.toLowerCase()}'`)
 
     if (review.state.toLowerCase() === 'approved') {
       const login = review.user?.login
       const { data: user } = await octokit.rest.users.getByUsername({ username: login })
-      _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(user?.name)
+      _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`${login} name is '${user?.name}'`)
 
       if (user?.name?.length > 0) {
         approveByBody += `\nApproved-by: ${login} (${user.name})`
