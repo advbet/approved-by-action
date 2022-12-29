@@ -65,7 +65,7 @@ const run = async () => {
 
   // body with "Approved-by" already set
   if (approveByIndex > -1) {
-    pullBody = pullBody.replace('/\nApproved-by\:.*/', approveByBody);
+    pullBody = pullBody.replace(/\nApproved-by\:.*/, approveByBody);
     updatePR = true;
   }
 
@@ -75,6 +75,7 @@ const run = async () => {
     updatePR = true;
   }
 
+  core.debug(`updatePR: ${updatePR}`);
   core.debug(`approveByIndex: ${approveByIndex}`);
   core.debug(`approveByBody length: ${approveByBody.length}`);
 

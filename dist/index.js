@@ -9797,7 +9797,7 @@ const run = async () => {
 
   // body with "Approved-by" already set
   if (approveByIndex > -1) {
-    pullBody = pullBody.replace('/\nApproved-by\:.*/', approveByBody);
+    pullBody = pullBody.replace(/\nApproved-by\:.*/, approveByBody);
     updatePR = true;
   }
 
@@ -9807,6 +9807,7 @@ const run = async () => {
     updatePR = true;
   }
 
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`updatePR: ${updatePR}`);
   _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`approveByIndex: ${approveByIndex}`);
   _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`approveByBody length: ${approveByBody.length}`);
 
