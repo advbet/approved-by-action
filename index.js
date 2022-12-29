@@ -1,12 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 
-const employees = {
-  'adv-bet': 'ADV',
-  aponad: 'Anton P.',
-  eeedvisss: 'Edvinas B.'
-}
-
 const run = async () => {
   const token = core.getInput('GITHUB_TOKEN', { required: true })
 
@@ -36,23 +30,26 @@ const run = async () => {
       return array.findIndex(x => review.user?.id === x.user?.id) === index
     })
 
+  let updatePR = false
   let approveByBody = ''
   let pullBody = pull.body
   const approveByIndex = pullBody.search(/Approved-by/)
-  let updatePR = false
 
-  latestReviews.forEach(review => {
+  for (const review of latestReviews) {
     core.debug(`${review.user?.login} is ${review.state.toLowerCase()}.`)
 
     if (review.state.toLowerCase() === 'approved') {
       const login = review.user?.login
-      if (login in employees) {
-        approveByBody += `\nApproved-by: ${employees[login]} (${login})`
+      const { data: user } = await octokit.rest.users.getByUsername({ username: login })
+      core.debug(user)
+
+      if (user.name.length > 0) {
+        approveByBody += `\nApproved-by: ${login} (${user.name})`
       } else {
         approveByBody += `\nApproved-by: ${login}`
       }
     }
-  })
+  }
 
   // body with "Approved-by" already set
   if (approveByIndex > -1) {

@@ -9733,12 +9733,6 @@ __nccwpck_require__.r(__webpack_exports__);
 
 
 
-const employees = {
-  'adv-bet': 'ADV',
-  aponad: 'Anton P.',
-  eeedvisss: 'Edvinas B.'
-}
-
 const run = async () => {
   const token = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('GITHUB_TOKEN', { required: true })
 
@@ -9768,23 +9762,26 @@ const run = async () => {
       return array.findIndex(x => review.user?.id === x.user?.id) === index
     })
 
+  let updatePR = false
   let approveByBody = ''
   let pullBody = pull.body
   const approveByIndex = pullBody.search(/Approved-by/)
-  let updatePR = false
 
-  latestReviews.forEach(review => {
+  for (const review of latestReviews) {
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`${review.user?.login} is ${review.state.toLowerCase()}.`)
 
     if (review.state.toLowerCase() === 'approved') {
       const login = review.user?.login
-      if (login in employees) {
-        approveByBody += `\nApproved-by: ${employees[login]} (${login})`
+      const { data: user } = await octokit.rest.users.getByUsername({ username: login })
+      _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(user)
+
+      if (user.name.length > 0) {
+        approveByBody += `\nApproved-by: ${login} (${user.name})`
       } else {
         approveByBody += `\nApproved-by: ${login}`
       }
     }
-  })
+  }
 
   // body with "Approved-by" already set
   if (approveByIndex > -1) {
