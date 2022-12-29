@@ -12,5 +12,5 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: advbet/approved-by-action
+      - uses: advbet/approved-by-action@v1
 ```
