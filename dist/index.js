@@ -9764,7 +9764,7 @@ const run = async () => {
 
   let updatePR = false
   let approveByBody = ''
-  let pullBody = pull.body
+  let pullBody = pull.body || ''
   const approveByIndex = pullBody.search(/Approved-by/)
 
   for (const review of latestReviews) {
