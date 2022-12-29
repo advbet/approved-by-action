@@ -2,6 +2,7 @@
   "name": "approved-by-action",
   "main": "index.js",
   "scripts": {
+    "lint": "standard --fix index.js",
     "build": "ncc build index.js -o dist --source-map"
   },
   "dependencies": {
@@ -9,6 +10,7 @@
     "@actions/github": "^5.1.1"
   },
   "devDependencies": {
-    "@vercel/ncc": "^0.36.0"
+    "@vercel/ncc": "^0.36.0",
+    "standard": "^17.0.0"
   }
 }

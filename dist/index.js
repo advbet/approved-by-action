@@ -9735,159 +9735,89 @@ __nccwpck_require__.r(__webpack_exports__);
 
 const employees = {
   'adv-bet': 'ADV',
-  'aponad': 'Anton P.',
-  'eeedvisss': 'Edvinas B.'
+  aponad: 'Anton P.',
+  eeedvisss: 'Edvinas B.'
 }
 
 const run = async () => {
-  const token = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('GITHUB_TOKEN', { required: true });
+  const token = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('GITHUB_TOKEN', { required: true })
 
   if (!token) {
-    throw new Error('No GITHUB_TOKEN found in input');
+    throw new Error('No GITHUB_TOKEN found in input')
   }
 
-  const octokit = _actions_github__WEBPACK_IMPORTED_MODULE_1__.getOctokit(token);
-  const context = _actions_github__WEBPACK_IMPORTED_MODULE_1__.context;
+  const octokit = _actions_github__WEBPACK_IMPORTED_MODULE_1__.getOctokit(token)
+  const context = _actions_github__WEBPACK_IMPORTED_MODULE_1__.context
 
-  const {data: pull} = await octokit.rest.pulls.get({
+  const { data: pull } = await octokit.rest.pulls.get({
+    ...context.repo,
+    pull_number: context.payload.pull_request.number
+  })
+
+  const { data: reviews } = await octokit.rest.pulls.listReviews({
     ...context.repo,
     pull_number: context.payload.pull_request.number,
-  });
-  // core.debug(pull.requested_reviewers);
-  // core.debug(pull.requested_teams);
-  //
-  //
-  // const {data: requestedReviewers} = await octokit.rest.pulls.listRequestedReviewers({
-  //   ...context.repo,
-  //   pull_number: context.payload.pull_request.number,
-  // })
-  // core.debug(requestedReviewers);
+    per_page: 100
+  })
 
-  const {data: reviews} = await octokit.rest.pulls.listReviews({
-    ...context.repo,
-    pull_number: context.payload.pull_request.number,
-    per_page: 100,
-  });
-
-  let latestReviews = reviews
+  const latestReviews = reviews
     .reverse()
     .filter(review => review.state.toLowerCase() !== 'commented')
     .filter((review, index, array) => {
       // https://dev.to/kannndev/filter-an-array-for-unique-values-in-javascript-1ion
       return array.findIndex(x => review.user?.id === x.user?.id) === index
-    });
+    })
 
-  let approveByBody = '';
-  let pullBody = pull.body;
-  let approveByIndex = pullBody.search(/Approved-by/);
-  let updatePR = false;
+  let approveByBody = ''
+  let pullBody = pull.body
+  const approveByIndex = pullBody.search(/Approved-by/)
+  let updatePR = false
 
   latestReviews.forEach(review => {
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`${review.user?.login} is ${review.state.toLowerCase()}.`)
 
     if (review.state.toLowerCase() === 'approved') {
-      const login = review.user?.login;
+      const login = review.user?.login
       if (login in employees) {
         approveByBody += `\nApproved-by: ${employees[login]} (${login})`
       } else {
         approveByBody += `\nApproved-by: ${login}`
       }
     }
-  });
+  })
 
   // body with "Approved-by" already set
   if (approveByIndex > -1) {
-    pullBody = pullBody.replace(/\nApproved-by\:.*/, approveByBody);
-    updatePR = true;
+    pullBody = pullBody.replace(/\nApproved-by:.*/, approveByBody)
+    updatePR = true
   }
 
   // body without "Approved-by"
   if (approveByBody.length > 0 && approveByIndex === -1) {
-    pullBody += `\n${approveByBody}`;
-    updatePR = true;
+    pullBody += `\n${approveByBody}`
+    updatePR = true
   }
 
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`updatePR: ${updatePR}`);
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`approveByIndex: ${approveByIndex}`);
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`approveByBody length: ${approveByBody.length}`);
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`updatePR: ${updatePR}`)
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`approveByIndex: ${approveByIndex}`)
+  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`approveByBody length: ${approveByBody.length}`)
 
   if (updatePR) {
     await octokit.rest.pulls.update({
       ...context.repo,
       pull_number: context.payload.pull_request.number,
-      body: pullBody,
-    });
+      body: pullBody
+    })
   }
-
-  // if (pull.requested_reviewers.length !== requestedReviewers.users.length) {
-  //   const requestedReviews = pull.requested_reviewers.map(user => {
-  //     return user.login;
-  //   });
-  //
-  //   const notApproved = requestedReviewers.users.map(user => {
-  //     return user.login;
-  //   });
-  //
-  //   const approved = requestedReviews.filter(login => {
-  //     return !notApproved.includes(login);
-  //   });
-  //
-  //   let text = '';
-  //   approved.forEach(login => {
-  //     if (login in employees) {
-  //       text += `\nApproved-by: ${employees[login]} (${login})`
-  //     } else {
-  //       text += `\nApproved-by: ${login}`
-  //     }
-  //   });
-  //
-  //   core.debug(text)
-  // }
-
-  // const {data: reviews} = await octokit.rest.pulls.listReviews({
-  //   ...context.repo,
-  //   pull_number: context.payload.pull_request.number,
-  //   per_page: 100,
-  // });
-  // core.debug(reviews);
-
-  // core.debug(reviews);
-  // core.debug(`reviews length: ${reviews.length}`);
-  //
-  // let latestReviews = reviews
-  //   .reverse()
-  //   .filter(review => review.user?.id !== context.payload.pull_request.user.id)
-  //   .filter(review => review.state.toLowerCase() !== 'commented')
-  //   .filter((review, index, array) => {
-  //     // unique
-  //     return array.findIndex(x => review.user?.id === x.user?.id) === index
-  //   })
-  //
-  //
-  //
-  // const approvedReviews = reviews.filter(review => review.state.toLowerCase() !== 'approved')
-  //
-  // if (approvedReviews.length > 0) {
-  //   let text = '';
-  //   approvedReviews.forEach(review => {
-  //     const login = review.user.login;
-  //     if (login in employees) {
-  //       text += `\nApproved-by: ${employees[login]} (${login})`
-  //     } else {
-  //       text += `\nApproved-by: ${login}`
-  //     }
-  //   })
-  //   core.debug(text);
-  // }
-};
+}
 
 run()
   .then(() => {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('Done.');
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('Done.')
   })
   .catch((e) => {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(e.message);
-  });
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(e.message)
+  })
 
 })();
 
