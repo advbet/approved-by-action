@@ -43,7 +43,7 @@ const run = async () => {
       const { data: user } = await octokit.rest.users.getByUsername({ username: login })
       core.debug(user)
 
-      if (user.name.length > 0) {
+      if (user?.name?.length > 0) {
         approveByBody += `\nApproved-by: ${login} (${user.name})`
       } else {
         approveByBody += `\nApproved-by: ${login}`
