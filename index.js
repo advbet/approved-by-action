@@ -41,7 +41,7 @@ const run = async () => {
     if (review.state.toLowerCase() === 'approved') {
       const login = review.user?.login
       const { data: user } = await octokit.rest.users.getByUsername({ username: login })
-      core.debug(user)
+      core.debug(user?.name)
 
       if (user?.name?.length > 0) {
         approveByBody += `\nApproved-by: ${login} (${user.name})`
@@ -53,7 +53,7 @@ const run = async () => {
 
   // body with "Approved-by" already set
   if (approveByIndex > -1) {
-    pullBody = pullBody.replace(/\nApproved-by:.*/, approveByBody)
+    pullBody = pullBody.replace(/\nApproved-by:.*/s, approveByBody)
     updatePR = true
   }
 
