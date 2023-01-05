@@ -1,5 +1,153 @@
-require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
+/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
+
+/***/ 8309:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.run = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const github = __importStar(__nccwpck_require__(5438));
+function run() {
+    var _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        const token = core.getInput("GITHUB_TOKEN", { required: true });
+        if (!token) {
+            throw new Error("No GITHUB_TOKEN found in input");
+        }
+        const octokit = github.getOctokit(token);
+        const context = github.context;
+        if (!context.payload.pull_request) {
+            throw new Error("No pull request found in payload");
+        }
+        const { data: pull } = yield octokit.rest.pulls.get(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number }));
+        const { data: reviews } = yield octokit.rest.pulls.listReviews(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, per_page: 100 }));
+        const latestReviews = reviews
+            .reverse()
+            .filter((review) => review.state.toLowerCase() !== "commented")
+            .filter((review, index, array) => {
+            // https://dev.to/kannndev/filter-an-array-for-unique-values-in-javascript-1ion
+            return array.findIndex((x) => { var _a, _b; return ((_a = review.user) === null || _a === void 0 ? void 0 : _a.id) === ((_b = x.user) === null || _b === void 0 ? void 0 : _b.id); }) === index;
+        });
+        let updatePR = false;
+        let approveByBody = "";
+        let pullBody = pull.body || "";
+        const approveByIndex = pullBody.search(/Approved-by/);
+        for (const review of latestReviews) {
+            core.debug(`Latest ${(_a = review.user) === null || _a === void 0 ? void 0 : _a.login} review '${review.state.toLowerCase()}'`);
+            if (!review.user) {
+                continue;
+            }
+            if (review.state.toLowerCase() === "approved") {
+                const login = review.user.login;
+                const { data: user } = yield octokit.rest.users.getByUsername({ username: login });
+                core.debug(`${login} name is '${user.name}'`);
+                if (user && user.name) {
+                    approveByBody += `\nApproved-by: ${login} (${user.name})`;
+                }
+                else {
+                    approveByBody += `\nApproved-by: ${login}`;
+                }
+            }
+        }
+        // body with "Approved-by" already set
+        if (approveByIndex > -1) {
+            pullBody = pullBody.replace(/\nApproved-by:.*/s, approveByBody);
+            updatePR = true;
+        }
+        // body without "Approved-by"
+        if (approveByBody.length > 0 && approveByIndex === -1) {
+            pullBody += `\n${approveByBody}`;
+            updatePR = true;
+        }
+        core.debug(`updatePR: ${updatePR}`);
+        core.debug(`approveByIndex: ${approveByIndex}`);
+        core.debug(`approveByBody length: ${approveByBody.length}`);
+        if (updatePR) {
+            yield octokit.rest.pulls.update(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, body: pullBody }));
+        }
+    });
+}
+exports.run = run;
+
+
+/***/ }),
+
+/***/ 1667:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const approved_by_1 = __nccwpck_require__(8309);
+(0, approved_by_1.run)()
+    .then(() => {
+    core.info("Done.");
+})
+    .catch((e) => {
+    core.error(e.message);
+});
+
+
+/***/ }),
 
 /***/ 7351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
@@ -9676,149 +9824,17 @@ module.exports = JSON.parse('[[[0,44],"disallowed_STD3_valid"],[[45,46],"valid"]
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat get default export */
-/******/ 	(() => {
-/******/ 		// getDefaultExport function for compatibility with non-harmony modules
-/******/ 		__nccwpck_require__.n = (module) => {
-/******/ 			var getter = module && module.__esModule ?
-/******/ 				() => (module['default']) :
-/******/ 				() => (module);
-/******/ 			__nccwpck_require__.d(getter, { a: getter });
-/******/ 			return getter;
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/define property getters */
-/******/ 	(() => {
-/******/ 		// define getter functions for harmony exports
-/******/ 		__nccwpck_require__.d = (exports, definition) => {
-/******/ 			for(var key in definition) {
-/******/ 				if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
-/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 				}
-/******/ 			}
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
-/******/ 	(() => {
-/******/ 		__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/make namespace object */
-/******/ 	(() => {
-/******/ 		// define __esModule on exports
-/******/ 		__nccwpck_require__.r = (exports) => {
-/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
-/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
-/******/ 			}
-/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
-/******/ 		};
-/******/ 	})();
-/******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be in strict mode.
-(() => {
-"use strict";
-__nccwpck_require__.r(__webpack_exports__);
-/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(2186);
-/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _actions_github__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(5438);
-/* harmony import */ var _actions_github__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(_actions_github__WEBPACK_IMPORTED_MODULE_1__);
-
-
-
-const run = async () => {
-  const token = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('GITHUB_TOKEN', { required: true })
-
-  if (!token) {
-    throw new Error('No GITHUB_TOKEN found in input')
-  }
-
-  const octokit = _actions_github__WEBPACK_IMPORTED_MODULE_1__.getOctokit(token)
-  const context = _actions_github__WEBPACK_IMPORTED_MODULE_1__.context
-
-  const { data: pull } = await octokit.rest.pulls.get({
-    ...context.repo,
-    pull_number: context.payload.pull_request.number
-  })
-
-  const { data: reviews } = await octokit.rest.pulls.listReviews({
-    ...context.repo,
-    pull_number: context.payload.pull_request.number,
-    per_page: 100
-  })
-
-  const latestReviews = reviews
-    .reverse()
-    .filter(review => review.state.toLowerCase() !== 'commented')
-    .filter((review, index, array) => {
-      // https://dev.to/kannndev/filter-an-array-for-unique-values-in-javascript-1ion
-      return array.findIndex(x => review.user?.id === x.user?.id) === index
-    })
-
-  let updatePR = false
-  let approveByBody = ''
-  let pullBody = pull.body || ''
-  const approveByIndex = pullBody.search(/Approved-by/)
-
-  for (const review of latestReviews) {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`Latest ${review.user?.login} review '${review.state.toLowerCase()}'`)
-
-    if (review.state.toLowerCase() === 'approved') {
-      const login = review.user?.login
-      const { data: user } = await octokit.rest.users.getByUsername({ username: login })
-      _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`${login} name is '${user?.name}'`)
-
-      if (user?.name?.length > 0) {
-        approveByBody += `\nApproved-by: ${login} (${user.name})`
-      } else {
-        approveByBody += `\nApproved-by: ${login}`
-      }
-    }
-  }
-
-  // body with "Approved-by" already set
-  if (approveByIndex > -1) {
-    pullBody = pullBody.replace(/\nApproved-by:.*/s, approveByBody)
-    updatePR = true
-  }
-
-  // body without "Approved-by"
-  if (approveByBody.length > 0 && approveByIndex === -1) {
-    pullBody += `\n${approveByBody}`
-    updatePR = true
-  }
-
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`updatePR: ${updatePR}`)
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`approveByIndex: ${approveByIndex}`)
-  _actions_core__WEBPACK_IMPORTED_MODULE_0__.debug(`approveByBody length: ${approveByBody.length}`)
-
-  if (updatePR) {
-    await octokit.rest.pulls.update({
-      ...context.repo,
-      pull_number: context.payload.pull_request.number,
-      body: pullBody
-    })
-  }
-}
-
-run()
-  .then(() => {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info('Done.')
-  })
-  .catch((e) => {
-    _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(e.message)
-  })
-
-})();
-
-module.exports = __webpack_exports__;
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __nccwpck_require__(1667);
+/******/ 	module.exports = __webpack_exports__;
+/******/ 	
 /******/ })()
 ;
-//# sourceMappingURL=index.js.map
