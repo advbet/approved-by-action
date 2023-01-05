@@ -39,11 +39,65 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = void 0;
+exports.run = exports.getBodyWithApprovedBy = exports.getApprovalsWithNames = exports.getApprovals = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
-function run() {
+function getApprovals(reviews) {
     var _a;
+    const approvals = [];
+    const latestReviews = reviews
+        .reverse()
+        .filter((review) => review.state.toLowerCase() !== "commented")
+        .filter((review, index, array) => {
+        // https://dev.to/kannndev/filter-an-array-for-unique-values-in-javascript-1ion
+        return array.findIndex((x) => { var _a, _b; return ((_a = review.user) === null || _a === void 0 ? void 0 : _a.id) === ((_b = x.user) === null || _b === void 0 ? void 0 : _b.id); }) === index;
+    });
+    for (const review of latestReviews) {
+        core.debug(`Latest ${(_a = review.user) === null || _a === void 0 ? void 0 : _a.login} review '${review.state.toLowerCase()}'`);
+        if (!review.user) {
+            continue;
+        }
+        if (review.state.toLowerCase() === "approved") {
+            approvals.push({ username: review.user.login });
+        }
+    }
+    return approvals;
+}
+exports.getApprovals = getApprovals;
+function getApprovalsWithNames(octokit, approvals) {
+    return __awaiter(this, void 0, void 0, function* () {
+        for (const approval of approvals) {
+            const { data: user } = yield octokit.rest.users.getByUsername({ username: approval.username });
+            if (user && user.name) {
+                approval.name = user.name;
+            }
+        }
+        return approvals;
+    });
+}
+exports.getApprovalsWithNames = getApprovalsWithNames;
+function getBodyWithApprovedBy(pullBody, approvals) {
+    pullBody = pullBody || "";
+    const approveByIndex = pullBody.search(/Approved-by/);
+    let approvedByBody = "";
+    for (const approval of approvals) {
+        approvedByBody += `\nApproved-by: ${approval.username}`;
+        if (approval.name) {
+            approvedByBody += ` (${approval.name})`;
+        }
+    }
+    // body with "Approved-by" already set
+    if (approveByIndex > -1) {
+        pullBody = pullBody.replace(/\nApproved-by:.*/s, approvedByBody);
+    }
+    // body without "Approved-by"
+    if (approvedByBody.length > 0 && approveByIndex === -1) {
+        pullBody += `\n${approvedByBody}`;
+    }
+    return pullBody;
+}
+exports.getBodyWithApprovedBy = getBodyWithApprovedBy;
+function run() {
     return __awaiter(this, void 0, void 0, function* () {
         const token = core.getInput("GITHUB_TOKEN", { required: true });
         if (!token) {
@@ -56,49 +110,11 @@ function run() {
         }
         const { data: pull } = yield octokit.rest.pulls.get(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number }));
         const { data: reviews } = yield octokit.rest.pulls.listReviews(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, per_page: 100 }));
-        const latestReviews = reviews
-            .reverse()
-            .filter((review) => review.state.toLowerCase() !== "commented")
-            .filter((review, index, array) => {
-            // https://dev.to/kannndev/filter-an-array-for-unique-values-in-javascript-1ion
-            return array.findIndex((x) => { var _a, _b; return ((_a = review.user) === null || _a === void 0 ? void 0 : _a.id) === ((_b = x.user) === null || _b === void 0 ? void 0 : _b.id); }) === index;
-        });
-        let updatePR = false;
-        let approveByBody = "";
-        let pullBody = pull.body || "";
-        const approveByIndex = pullBody.search(/Approved-by/);
-        for (const review of latestReviews) {
-            core.debug(`Latest ${(_a = review.user) === null || _a === void 0 ? void 0 : _a.login} review '${review.state.toLowerCase()}'`);
-            if (!review.user) {
-                continue;
-            }
-            if (review.state.toLowerCase() === "approved") {
-                const login = review.user.login;
-                const { data: user } = yield octokit.rest.users.getByUsername({ username: login });
-                core.debug(`${login} name is '${user.name}'`);
-                if (user && user.name) {
-                    approveByBody += `\nApproved-by: ${login} (${user.name})`;
-                }
-                else {
-                    approveByBody += `\nApproved-by: ${login}`;
-                }
-            }
-        }
-        // body with "Approved-by" already set
-        if (approveByIndex > -1) {
-            pullBody = pullBody.replace(/\nApproved-by:.*/s, approveByBody);
-            updatePR = true;
-        }
-        // body without "Approved-by"
-        if (approveByBody.length > 0 && approveByIndex === -1) {
-            pullBody += `\n${approveByBody}`;
-            updatePR = true;
-        }
-        core.debug(`updatePR: ${updatePR}`);
-        core.debug(`approveByIndex: ${approveByIndex}`);
-        core.debug(`approveByBody length: ${approveByBody.length}`);
-        if (updatePR) {
-            yield octokit.rest.pulls.update(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, body: pullBody }));
+        let approvals = getApprovals(reviews);
+        approvals = yield getApprovalsWithNames(octokit, approvals);
+        const body = getBodyWithApprovedBy(pull.body || "", approvals);
+        if (body !== pull.body) {
+            yield octokit.rest.pulls.update(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, body: body }));
         }
     });
 }

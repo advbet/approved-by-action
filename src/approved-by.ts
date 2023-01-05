@@ -1,5 +1,82 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
+import { components } from "@octokit/openapi-types";
+import { GitHub } from "@actions/github/lib/utils";
+
+export type Octokit = InstanceType<typeof GitHub>;
+export type Review = components["schemas"]["pull-request-review"];
+export type Reviews = Review[];
+export type Approval = {
+  username: string;
+  name: string;
+};
+export type Approvals = Approval[];
+
+export function getApprovals(reviews: Reviews): Approvals {
+  const approvals: Approvals = [];
+
+  const latestReviews = reviews
+    .reverse()
+    .filter((review) => review.state.toLowerCase() !== "commented")
+    .filter((review, index, array) => {
+      // https://dev.to/kannndev/filter-an-array-for-unique-values-in-javascript-1ion
+      return array.findIndex((x) => review.user?.id === x.user?.id) === index;
+    });
+
+  for (const review of latestReviews) {
+    core.debug(`Latest ${review.user?.login} review '${review.state.toLowerCase()}'`);
+
+    if (!review.user) {
+      continue;
+    }
+
+    if (review.state.toLowerCase() === "approved") {
+      approvals.push({ username: review.user.login } as Approval);
+    }
+  }
+
+  return approvals;
+}
+
+export async function getApprovalsWithNames(
+  octokit: Octokit,
+  approvals: Approvals
+): Promise<Approvals> {
+  for (const approval of approvals) {
+    const { data: user } = await octokit.rest.users.getByUsername({ username: approval.username });
+
+    if (user && user.name) {
+      approval.name = user.name;
+    }
+  }
+  return approvals;
+}
+
+export function getBodyWithApprovedBy(pullBody: string | null, approvals: Approvals): string {
+  pullBody = pullBody || "";
+  const approveByIndex = pullBody.search(/Approved-by/);
+  let approvedByBody = "";
+
+  for (const approval of approvals) {
+    approvedByBody += `\nApproved-by: ${approval.username}`;
+
+    if (approval.name) {
+      approvedByBody += ` (${approval.name})`;
+    }
+  }
+
+  // body with "Approved-by" already set
+  if (approveByIndex > -1) {
+    pullBody = pullBody.replace(/\nApproved-by:.*/s, approvedByBody);
+  }
+
+  // body without "Approved-by"
+  if (approvedByBody.length > 0 && approveByIndex === -1) {
+    pullBody += `\n${approvedByBody}`;
+  }
+
+  return pullBody;
+}
 
 export async function run(): Promise<void> {
   const token = core.getInput("GITHUB_TOKEN", { required: true });
@@ -26,60 +103,15 @@ export async function run(): Promise<void> {
     per_page: 100,
   });
 
-  const latestReviews = reviews
-    .reverse()
-    .filter((review) => review.state.toLowerCase() !== "commented")
-    .filter((review, index, array) => {
-      // https://dev.to/kannndev/filter-an-array-for-unique-values-in-javascript-1ion
-      return array.findIndex((x) => review.user?.id === x.user?.id) === index;
-    });
+  let approvals = getApprovals(reviews);
+  approvals = await getApprovalsWithNames(octokit, approvals);
+  const body = getBodyWithApprovedBy(pull.body || "", approvals);
 
-  let updatePR = false;
-  let approveByBody = "";
-  let pullBody = pull.body || "";
-  const approveByIndex = pullBody.search(/Approved-by/);
-
-  for (const review of latestReviews) {
-    core.debug(`Latest ${review.user?.login} review '${review.state.toLowerCase()}'`);
-
-    if (!review.user) {
-      continue;
-    }
-
-    if (review.state.toLowerCase() === "approved") {
-      const login = review.user.login;
-      const { data: user } = await octokit.rest.users.getByUsername({ username: login });
-      core.debug(`${login} name is '${user.name}'`);
-
-      if (user && user.name) {
-        approveByBody += `\nApproved-by: ${login} (${user.name})`;
-      } else {
-        approveByBody += `\nApproved-by: ${login}`;
-      }
-    }
-  }
-
-  // body with "Approved-by" already set
-  if (approveByIndex > -1) {
-    pullBody = pullBody.replace(/\nApproved-by:.*/s, approveByBody);
-    updatePR = true;
-  }
-
-  // body without "Approved-by"
-  if (approveByBody.length > 0 && approveByIndex === -1) {
-    pullBody += `\n${approveByBody}`;
-    updatePR = true;
-  }
-
-  core.debug(`updatePR: ${updatePR}`);
-  core.debug(`approveByIndex: ${approveByIndex}`);
-  core.debug(`approveByBody length: ${approveByBody.length}`);
-
-  if (updatePR) {
+  if (body !== pull.body) {
     await octokit.rest.pulls.update({
       ...context.repo,
       pull_number: context.payload.pull_request.number,
-      body: pullBody,
+      body: body,
     });
   }
 }
