@@ -39,12 +39,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = exports.getBodyWithApprovedBy = exports.getApprovalsWithNames = exports.getApprovals = void 0;
+exports.run = exports.getBodyWithApprovedBy = exports.getReviewers = exports.getApprovedReviews = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
-function getApprovals(reviews) {
+function getApprovedReviews(reviews) {
     var _a;
-    const approvals = [];
+    const approved = [];
     const latestReviews = reviews
         .reverse()
         .filter((review) => review.state.toLowerCase() !== "commented")
@@ -54,36 +54,39 @@ function getApprovals(reviews) {
     });
     for (const review of latestReviews) {
         core.debug(`Latest ${(_a = review.user) === null || _a === void 0 ? void 0 : _a.login} review '${review.state.toLowerCase()}'`);
-        if (!review.user) {
-            continue;
-        }
         if (review.state.toLowerCase() === "approved") {
-            approvals.push({ username: review.user.login });
+            approved.push(review);
         }
     }
-    return approvals;
+    return approved;
 }
-exports.getApprovals = getApprovals;
-function getApprovalsWithNames(octokit, approvals) {
+exports.getApprovedReviews = getApprovedReviews;
+function getReviewers(octokit, reviews) {
     return __awaiter(this, void 0, void 0, function* () {
-        for (const approval of approvals) {
-            const { data: user } = yield octokit.rest.users.getByUsername({ username: approval.username });
-            if (user && user.name) {
-                approval.name = user.name;
+        const reviewers = [];
+        for (const review of reviews) {
+            if (!review.user) {
+                continue;
             }
+            const reviewer = { username: review.user.login };
+            const { data: user } = yield octokit.rest.users.getByUsername({ username: review.user.login });
+            if (user && user.name) {
+                reviewer.name = user.name;
+            }
+            reviewers.push(reviewer);
         }
-        return approvals;
+        return reviewers;
     });
 }
-exports.getApprovalsWithNames = getApprovalsWithNames;
-function getBodyWithApprovedBy(pullBody, approvals) {
+exports.getReviewers = getReviewers;
+function getBodyWithApprovedBy(pullBody, reviewers) {
     pullBody = pullBody || "";
     const approveByIndex = pullBody.search(/Approved-by/);
     let approvedByBody = "";
-    for (const approval of approvals) {
-        approvedByBody += `\nApproved-by: ${approval.username}`;
-        if (approval.name) {
-            approvedByBody += ` (${approval.name})`;
+    for (const reviewer of reviewers) {
+        approvedByBody += `\nApproved-by: ${reviewer.username}`;
+        if (reviewer.name) {
+            approvedByBody += ` (${reviewer.name})`;
         }
     }
     // body with "Approved-by" already set
@@ -110,9 +113,9 @@ function run() {
         }
         const { data: pull } = yield octokit.rest.pulls.get(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number }));
         const { data: reviews } = yield octokit.rest.pulls.listReviews(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, per_page: 100 }));
-        let approvals = getApprovals(reviews);
-        approvals = yield getApprovalsWithNames(octokit, approvals);
-        const body = getBodyWithApprovedBy(pull.body || "", approvals);
+        const approvedReviews = getApprovedReviews(reviews);
+        const reviewers = yield getReviewers(octokit, approvedReviews);
+        const body = getBodyWithApprovedBy(pull.body, reviewers);
         if (body !== pull.body) {
             yield octokit.rest.pulls.update(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, body: body }));
         }

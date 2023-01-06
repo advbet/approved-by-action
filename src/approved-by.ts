@@ -6,14 +6,14 @@ import { GitHub } from "@actions/github/lib/utils";
 export type Octokit = InstanceType<typeof GitHub>;
 export type Review = components["schemas"]["pull-request-review"];
 export type Reviews = Review[];
-export type Approval = {
+export type Reviewer = {
   username: string;
   name: string;
 };
-export type Approvals = Approval[];
+export type Reviewers = Reviewer[];
 
-export function getApprovals(reviews: Reviews): Approvals {
-  const approvals: Approvals = [];
+export function getApprovedReviews(reviews: Reviews): Reviews {
+  const approved: Reviews = [];
 
   const latestReviews = reviews
     .reverse()
@@ -26,42 +26,42 @@ export function getApprovals(reviews: Reviews): Approvals {
   for (const review of latestReviews) {
     core.debug(`Latest ${review.user?.login} review '${review.state.toLowerCase()}'`);
 
+    if (review.state.toLowerCase() === "approved") {
+      approved.push(review);
+    }
+  }
+
+  return approved;
+}
+
+export async function getReviewers(octokit: Octokit, reviews: Reviews): Promise<Reviewers> {
+  const reviewers: Reviewers = [];
+
+  for (const review of reviews) {
     if (!review.user) {
       continue;
     }
-
-    if (review.state.toLowerCase() === "approved") {
-      approvals.push({ username: review.user.login } as Approval);
-    }
-  }
-
-  return approvals;
-}
-
-export async function getApprovalsWithNames(
-  octokit: Octokit,
-  approvals: Approvals
-): Promise<Approvals> {
-  for (const approval of approvals) {
-    const { data: user } = await octokit.rest.users.getByUsername({ username: approval.username });
+    const reviewer = { username: review.user.login } as Reviewer;
+    const { data: user } = await octokit.rest.users.getByUsername({ username: review.user.login });
 
     if (user && user.name) {
-      approval.name = user.name;
+      reviewer.name = user.name;
     }
+    reviewers.push(reviewer);
   }
-  return approvals;
+  return reviewers;
 }
 
-export function getBodyWithApprovedBy(pullBody: string | null, approvals: Approvals): string {
+export function getBodyWithApprovedBy(pullBody: string | null, reviewers: Reviewers): string {
   pullBody = pullBody || "";
   const approveByIndex = pullBody.search(/Approved-by/);
   let approvedByBody = "";
 
-  for (const approval of approvals) {
-    approvedByBody += `\nApproved-by: ${approval.username}`;
+  for (const reviewer of reviewers) {
+    approvedByBody += `\nApproved-by: ${reviewer.username}`;
 
-    if (approval.name) {
-      approvedByBody += ` (${approval.name})`;
+    if (reviewer.name) {
+      approvedByBody += ` (${reviewer.name})`;
     }
   }
 
@@ -103,9 +103,9 @@ export async function run(): Promise<void> {
     per_page: 100,
   });
 
-  let approvals = getApprovals(reviews);
-  approvals = await getApprovalsWithNames(octokit, approvals);
-  const body = getBodyWithApprovedBy(pull.body || "", approvals);
+  const approvedReviews = getApprovedReviews(reviews);
+  const reviewers = await getReviewers(octokit, approvedReviews);
+  const body = getBodyWithApprovedBy(pull.body, reviewers);
 
   if (body !== pull.body) {
     await octokit.rest.pulls.update({

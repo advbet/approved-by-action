@@ -1,6 +1,6 @@
 import { expect, test } from "@jest/globals";
 import * as core from "@actions/core";
-import { Approvals, getApprovals, getBodyWithApprovedBy, Reviews } from "../src/approved-by";
+import { getApprovedReviews, getBodyWithApprovedBy, Reviewers, Reviews } from "../src/approved-by";
 
 type RecursivePartial<T> = {
   [P in keyof T]?: RecursivePartial<T[P]>;
@@ -25,10 +25,12 @@ describe("getting approvals from reviews", () => {
         state: "APPROVED",
       },
     ];
-    expect(getApprovals(reviews as Reviews)).toStrictEqual([
-      { username: "test2" },
-      { username: "test1" },
-    ]);
+    expect(getApprovedReviews(reviews as Reviews)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ user: expect.objectContaining({ login: "test2" }) }),
+        expect.objectContaining({ user: expect.objectContaining({ login: "test1" }) })
+      ])
+    );
   });
 
   test("1 approval, 1 dismiss from different users", () => {
@@ -42,31 +44,35 @@ describe("getting approvals from reviews", () => {
         state: "DISMISSED",
       },
     ];
-    expect(getApprovals(reviews as Reviews)).toStrictEqual([{ username: "test1" }]);
+    expect(getApprovedReviews(reviews as Reviews)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ user: expect.objectContaining({ login: "test1" }) }),
+      ])
+    );
   });
 
   test("no reviews", () => {
     const reviews: RecursivePartial<Reviews> = [];
-    expect(getApprovals(reviews as Reviews)).toStrictEqual([]);
+    expect(getApprovedReviews(reviews as Reviews)).toStrictEqual([]);
   });
 });
 
 describe("setting Approved-by", () => {
   test("null body", () => {
     const body = null;
-    const approvals: RecursivePartial<Approvals> = [{ username: "test1" }];
-    expect(getBodyWithApprovedBy(body, approvals as Approvals)).toBe("\n\nApproved-by: test1");
+    const reviewers: RecursivePartial<Reviewers> = [{ username: "test1" }];
+    expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe("\n\nApproved-by: test1");
   });
 
   test("existing body without Approved-by", () => {
     const body = "Test";
-    const approvals: RecursivePartial<Approvals> = [{ username: "test1" }];
-    expect(getBodyWithApprovedBy(body, approvals as Approvals)).toBe("Test\n\nApproved-by: test1");
+    const reviewers: RecursivePartial<Reviewers> = [{ username: "test1" }];
+    expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe("Test\n\nApproved-by: test1");
   });
 
   test("existing body with Approved-by", () => {
     const body = "Test\n\nApproved-by: test2";
-    const approvals: RecursivePartial<Approvals> = [{ username: "test1" }];
-    expect(getBodyWithApprovedBy(body, approvals as Approvals)).toBe("Test\n\nApproved-by: test1");
+    const reviewers: RecursivePartial<Reviewers> = [{ username: "test1" }];
+    expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe("Test\n\nApproved-by: test1");
   });
 });
