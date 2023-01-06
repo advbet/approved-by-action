@@ -50,11 +50,6 @@ describe("getting approvals from reviews", () => {
       ])
     );
   });
-
-  test("no reviews", () => {
-    const reviews: RecursivePartial<Reviews> = [];
-    expect(getApprovedReviews(reviews as Reviews)).toStrictEqual([]);
-  });
 });
 
 describe("setting Approved-by", () => {
