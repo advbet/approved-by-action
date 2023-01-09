@@ -43,8 +43,6 @@ exports.run = exports.getBodyWithApprovedBy = exports.getReviewers = exports.get
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 function getApprovedReviews(reviews) {
-    var _a;
-    const approved = [];
     const latestReviews = reviews
         .reverse()
         .filter((review) => review.state.toLowerCase() !== "commented")
@@ -52,13 +50,7 @@ function getApprovedReviews(reviews) {
         // https://dev.to/kannndev/filter-an-array-for-unique-values-in-javascript-1ion
         return array.findIndex((x) => { var _a, _b; return ((_a = review.user) === null || _a === void 0 ? void 0 : _a.id) === ((_b = x.user) === null || _b === void 0 ? void 0 : _b.id); }) === index;
     });
-    for (const review of latestReviews) {
-        core.debug(`Latest ${(_a = review.user) === null || _a === void 0 ? void 0 : _a.login} review '${review.state.toLowerCase()}'`);
-        if (review.state.toLowerCase() === "approved") {
-            approved.push(review);
-        }
-    }
-    return approved;
+    return latestReviews.filter((review) => review.state.toLowerCase() === "approved");
 }
 exports.getApprovedReviews = getApprovedReviews;
 function getReviewers(octokit, reviews) {

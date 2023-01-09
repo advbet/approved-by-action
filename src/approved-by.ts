@@ -13,8 +13,6 @@ export type Reviewer = {
 export type Reviewers = Reviewer[];
 
 export function getApprovedReviews(reviews: Reviews): Reviews {
-  const approved: Reviews = [];
-
   const latestReviews = reviews
     .reverse()
     .filter((review) => review.state.toLowerCase() !== "commented")
@@ -23,15 +21,7 @@ export function getApprovedReviews(reviews: Reviews): Reviews {
       return array.findIndex((x) => review.user?.id === x.user?.id) === index;
     });
 
-  for (const review of latestReviews) {
-    core.debug(`Latest ${review.user?.login} review '${review.state.toLowerCase()}'`);
-
-    if (review.state.toLowerCase() === "approved") {
-      approved.push(review);
-    }
-  }
-
-  return approved;
+  return latestReviews.filter((review) => review.state.toLowerCase() === "approved");
 }
 
 export async function getReviewers(octokit: Octokit, reviews: Reviews): Promise<Reviewers> {

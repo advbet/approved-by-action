@@ -50,6 +50,38 @@ describe("getting approvals from reviews", () => {
       ])
     );
   });
+
+  test("1 approval, 1 dismiss from same user, dismiss last", () => {
+    const reviews: RecursivePartial<Reviews> = [
+      {
+        user: { id: 1, login: "test1" },
+        state: "APPROVED",
+      },
+      {
+        user: { id: 1, login: "test1" },
+        state: "DISMISSED",
+      },
+    ];
+    expect(getApprovedReviews(reviews as Reviews)).toEqual([]);
+  });
+
+  test("1 approval, 1 dismiss from same user, dismiss first", () => {
+    const reviews: RecursivePartial<Reviews> = [
+      {
+        user: { id: 1, login: "test1" },
+        state: "DISMISSED",
+      },
+      {
+        user: { id: 1, login: "test1" },
+        state: "APPROVED",
+      },
+    ];
+    expect(getApprovedReviews(reviews as Reviews)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ user: expect.objectContaining({ login: "test1" }) }),
+      ])
+    );
+  });
 });
 
 describe("setting Approved-by", () => {
