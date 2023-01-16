@@ -17,5 +17,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/cache@v3
+        with:
+          path: cache.json    
       - uses: advbet/approved-by-action@v1
+      - uses: actions/cache/save@v3
+        with:
+          path: cache.json
 ```

@@ -1,5 +1,6 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
+import * as fs from "fs";
 import { components } from "@octokit/openapi-types";
 import { GitHub } from "@actions/github/lib/utils";
 
@@ -11,6 +12,8 @@ export type Reviewer = {
   name: string;
 };
 export type Reviewers = Reviewer[];
+export type Cache = { [key: string]: string };
+let cache: Cache = {};
 
 export function getApprovedReviews(reviews: Reviews): Reviews {
   const latestReviews = reviews
@@ -31,15 +34,47 @@ export async function getReviewers(octokit: Octokit, reviews: Reviews): Promise<
     if (!review.user) {
       continue;
     }
-    const reviewer = { username: review.user.login } as Reviewer;
-    const { data: user } = await octokit.rest.users.getByUsername({ username: review.user.login });
+    reviewers.push(await getReviewer(octokit, review.user.login));
+  }
+
+  return reviewers;
+}
+
+export async function getReviewer(octokit: Octokit, username: string): Promise<Reviewer> {
+  const reviewer = { username } as Reviewer;
+
+  if (username in cache) {
+    reviewer.name = cache[username];
+  } else {
+    const { data: user } = await octokit.rest.users.getByUsername({ username: username });
 
     if (user && user.name) {
       reviewer.name = user.name;
+      cache[username] = user.name;
     }
-    reviewers.push(reviewer);
   }
-  return reviewers;
+
+  return reviewer;
+}
+
+export function readCache(): any {
+  fs.readFile('./cache.json', 'utf8', (err, data) => {
+    if (err) {
+      console.log(`Error reading file: ${err}`)
+    } else {
+      return JSON.parse(data)
+    }
+  })
+}
+
+export function updateCache(filename: string, cache: any): void {
+  fs.writeFile('./cache.json', JSON.stringify(cache), 'utf8', err => {
+    if (err) {
+      console.log(`Error writing file: ${err}`)
+    } else {
+      console.log(`File is written successfully!`)
+    }
+  })
 }
 
 export function getBodyWithApprovedBy(pullBody: string | null, reviewers: Reviewers): string {
@@ -84,24 +119,26 @@ export async function run(): Promise<void> {
 
   const { data: pull } = await octokit.rest.pulls.get({
     ...context.repo,
-    pull_number: context.payload.pull_request.number,
+    pull_number: context.payload.pull_request.number
   });
 
   const { data: reviews } = await octokit.rest.pulls.listReviews({
     ...context.repo,
     pull_number: context.payload.pull_request.number,
-    per_page: 100,
+    per_page: 100
   });
 
   const approvedReviews = getApprovedReviews(reviews);
+  cache = await readCache();
   const reviewers = await getReviewers(octokit, approvedReviews);
+  await updateCache("", cache);
   const body = getBodyWithApprovedBy(pull.body, reviewers);
 
   if (body !== pull.body) {
     await octokit.rest.pulls.update({
       ...context.repo,
       pull_number: context.payload.pull_request.number,
-      body: body,
+      body: body
     });
   }
 }
