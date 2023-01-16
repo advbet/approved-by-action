@@ -58,23 +58,23 @@ export async function getReviewer(octokit: Octokit, username: string): Promise<R
 }
 
 export function readCache(): any {
-  fs.readFile('./cache.json', 'utf8', (err, data) => {
+  fs.readFile("./cache.json", "utf8", (err, data) => {
     if (err) {
-      console.log(`Error reading file: ${err}`)
+      console.log(`Error reading file: ${err}`);
     } else {
-      return JSON.parse(data)
+      return JSON.parse(data);
     }
-  })
+  });
 }
 
 export function updateCache(filename: string, cache: any): void {
-  fs.writeFile('./cache.json', JSON.stringify(cache), 'utf8', err => {
+  fs.writeFile("./cache.json", JSON.stringify(cache), "utf8", (err) => {
     if (err) {
-      console.log(`Error writing file: ${err}`)
+      console.log(`Error writing file: ${err}`);
     } else {
-      console.log(`File is written successfully!`)
+      console.log(`File is written successfully!`);
     }
-  })
+  });
 }
 
 export function getBodyWithApprovedBy(pullBody: string | null, reviewers: Reviewers): string {
@@ -119,13 +119,13 @@ export async function run(): Promise<void> {
 
   const { data: pull } = await octokit.rest.pulls.get({
     ...context.repo,
-    pull_number: context.payload.pull_request.number
+    pull_number: context.payload.pull_request.number,
   });
 
   const { data: reviews } = await octokit.rest.pulls.listReviews({
     ...context.repo,
     pull_number: context.payload.pull_request.number,
-    per_page: 100
+    per_page: 100,
   });
 
   const approvedReviews = getApprovedReviews(reviews);
@@ -138,7 +138,7 @@ export async function run(): Promise<void> {
     await octokit.rest.pulls.update({
       ...context.repo,
       pull_number: context.payload.pull_request.number,
-      body: body
+      body: body,
     });
   }
 }

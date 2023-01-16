@@ -1,16 +1,7 @@
 import { expect, test } from "@jest/globals";
 import * as core from "@actions/core";
 // import * as rest from "@octokit/rest";
-import { Octokit } from "@octokit/rest"
-import {
-  getApprovedReviews,
-  getBodyWithApprovedBy,
-  getReviewers,
-  Reviewers,
-  Reviews,
-} from "../src/approved-by";
-import { GitHub } from "@actions/github/lib/utils";
-
+import { getApprovedReviews, getBodyWithApprovedBy, Reviewers, Reviews } from "../src/approved-by";
 
 type RecursivePartial<T> = {
   [P in keyof T]?: RecursivePartial<T[P]>;
