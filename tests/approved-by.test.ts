@@ -110,7 +110,7 @@ describe("getting reviewers", () => {
 
   // jest.mock('github')
   // const octokit = jest.fn();
-  // octokit.mockImplementationOnceœ
+  // octokit.mockImplementationOnce
   // jest.spyOn("github", "getOctokit").mockReturnValue(octokit);
 
   // const octokit = jest.mock<Octokit>;
@@ -140,16 +140,6 @@ describe("getting reviewers", () => {
     // octokit.rest.users.getByUsername
     // Octokit.get.mockResolvedValue(resp);
 
-    // const reviews: RecursivePartial<Reviews> = [
-    //   {
-    //     user: { id: 1, login: "test1" },
-    //     state: "DISMISSED",
-    //   },
-    //   {
-    //     user: { id: 1, login: "test1" },
-    //     state: "APPROVED",
-    //   },
-    // ];
     // expect(getReviewer(octokit, "test1")).toBe([
     //   { username: "test1", name: "Test Testing" },
     // ]);
