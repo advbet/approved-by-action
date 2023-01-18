@@ -1,7 +1,11 @@
+import * as github from "@actions/github";
 import { expect, test } from "@jest/globals";
 import * as core from "@actions/core";
-// import * as rest from "@octokit/rest";
-import { getApprovedReviews, getBodyWithApprovedBy, Reviewers, Reviews } from "../src/approved-by";
+import { Moctokit } from "@kie/mock-github";
+import { getApprovedReviews, getBodyWithApprovedBy, Reviewers, Reviews, getReviewer } from "../src/approved-by";
+
+const octokit = github.getOctokit('token');
+const moctokit = new Moctokit();
 
 type RecursivePartial<T> = {
   [P in keyof T]?: RecursivePartial<T[P]>;
@@ -106,42 +110,23 @@ describe("setting Approved-by", () => {
 });
 
 describe("getting reviewers", () => {
-  // const octokit = github.getOctokit(token);
+  test("get reviewer from octokit API", async () => {
+    moctokit.rest.users
+      .getByUsername({username: "test1"})
+      .reply({ status: 200, data: { name: "name from API" } });
 
-  // jest.mock('github')
-  // const octokit = jest.fn();
-  // octokit.mockImplementationOnce
-  // jest.spyOn("github", "getOctokit").mockReturnValue(octokit);
+    const result = await getReviewer(octokit, "test1", {});
 
-  // const octokit = jest.mock<Octokit>;
-  // octokit.rest.users.getByUsername({ username: review.user.login });
+    expect(result).toEqual({ name: "name from API", username: "test1" });
+  });
 
-  // const mockedGitHub = jest.mocked(GitHub, {shallow: true});
+  test("get reviewer from cache", async () => {
+    const cache = {
+      'test1': 'name from cache'
+    };
 
-  test("cached", () => {
-    // octokit.rest.users.getByUsername().mockReturnValue({ user: "Test Testing" });
-    // const octokit = new GitHub();
+    const result = await getReviewer(octokit, "test1", cache);
 
-    // const o = new octokit();
-
-    // const mockedGitHub = jest.mocked(GitHub);
-    // jest.mock("@octokit/rest");
-    // const mockedOctokit = jest.mocked(rest.Octokit);
-    // mockedOctokit.
-
-
-    // jest.mock('@octokit/rest');
-    // const mockedOctokit = jest.mocked(Octokit);
-    // const mockedOctokit = Octokit as jest.Mocked<typeof Octokit>;
-    // const mockedGitHub = GitHub as jest.Mocked<typeof GitHub>
-    // mockedOctokit.rest.users.get.mockReturnValue([{ user: 'Test Testing' }]);
-
-    // const octokit = new GitHub
-    // octokit.rest.users.getByUsername
-    // Octokit.get.mockResolvedValue(resp);
-
-    // expect(getReviewer(octokit, "test1")).toBe([
-    //   { username: "test1", name: "Test Testing" },
-    // ]);
+    expect(result).toEqual({ name: "name from cache", username: "test1" });
   });
 });

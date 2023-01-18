@@ -13,7 +13,6 @@ export type Reviewer = {
 };
 export type Reviewers = Reviewer[];
 export type Cache = { [key: string]: string };
-let cache: Cache = {};
 
 export function getApprovedReviews(reviews: Reviews): Reviews {
   const latestReviews = reviews
@@ -27,20 +26,20 @@ export function getApprovedReviews(reviews: Reviews): Reviews {
   return latestReviews.filter((review) => review.state.toLowerCase() === "approved");
 }
 
-export async function getReviewers(octokit: Octokit, reviews: Reviews): Promise<Reviewers> {
+export async function getReviewers(octokit: Octokit, reviews: Reviews, cache: Cache): Promise<Reviewers> {
   const reviewers: Reviewers = [];
 
   for (const review of reviews) {
     if (!review.user) {
       continue;
     }
-    reviewers.push(await getReviewer(octokit, review.user.login));
+    reviewers.push(await getReviewer(octokit, review.user.login, cache));
   }
 
   return reviewers;
 }
 
-export async function getReviewer(octokit: Octokit, username: string): Promise<Reviewer> {
+export async function getReviewer(octokit: Octokit, username: string, cache: Cache): Promise<Reviewer> {
   const reviewer = { username } as Reviewer;
 
   if (username in cache) {
@@ -67,7 +66,7 @@ export function readCache(): any {
   });
 }
 
-export function updateCache(filename: string, cache: any): void {
+export function updateCache(filename: string, cache: Cache): void {
   fs.writeFile("./cache.json", JSON.stringify(cache), "utf8", (err) => {
     if (err) {
       console.log(`Error writing file: ${err}`);
@@ -129,8 +128,9 @@ export async function run(): Promise<void> {
   });
 
   const approvedReviews = getApprovedReviews(reviews);
-  cache = await readCache();
-  const reviewers = await getReviewers(octokit, approvedReviews);
+  const cache: Cache = await readCache();
+  const reviewers = await getReviewers(octokit, approvedReviews, cache);
+
   await updateCache("", cache);
   const body = getBodyWithApprovedBy(pull.body, reviewers);
 
