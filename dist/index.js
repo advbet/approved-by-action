@@ -39,9 +39,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = exports.getBodyWithApprovedBy = exports.getReviewers = exports.getApprovedReviews = void 0;
+exports.run = exports.getBodyWithApprovedBy = exports.updateCache = exports.readCache = exports.getReviewer = exports.getReviewers = exports.getApprovedReviews = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
+const fs = __importStar(__nccwpck_require__(7147));
 function getApprovedReviews(reviews) {
     const latestReviews = reviews
         .reverse()
@@ -53,24 +54,59 @@ function getApprovedReviews(reviews) {
     return latestReviews.filter((review) => review.state.toLowerCase() === "approved");
 }
 exports.getApprovedReviews = getApprovedReviews;
-function getReviewers(octokit, reviews) {
+function getReviewers(octokit, reviews, cache) {
     return __awaiter(this, void 0, void 0, function* () {
         const reviewers = [];
         for (const review of reviews) {
             if (!review.user) {
                 continue;
             }
-            const reviewer = { username: review.user.login };
-            const { data: user } = yield octokit.rest.users.getByUsername({ username: review.user.login });
-            if (user && user.name) {
-                reviewer.name = user.name;
-            }
-            reviewers.push(reviewer);
+            reviewers.push(yield getReviewer(octokit, review.user.login, cache));
         }
         return reviewers;
     });
 }
 exports.getReviewers = getReviewers;
+function getReviewer(octokit, username, cache) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const reviewer = { username };
+        if (username in cache) {
+            reviewer.name = cache[username];
+        }
+        else {
+            const { data: user } = yield octokit.rest.users.getByUsername({ username: username });
+            if (user && user.name) {
+                reviewer.name = user.name;
+                cache[username] = user.name;
+            }
+        }
+        return reviewer;
+    });
+}
+exports.getReviewer = getReviewer;
+function readCache(path = "./cache.json") {
+    fs.readFile(path, "utf8", (err, data) => {
+        if (err) {
+            console.log(`Error reading file: ${err}`);
+        }
+        else {
+            return JSON.parse(data);
+        }
+    });
+    return {};
+}
+exports.readCache = readCache;
+function updateCache(cache, path = "./cache.json") {
+    fs.writeFile(path, JSON.stringify(cache), "utf8", (err) => {
+        if (err) {
+            console.log(`Error writing file: ${err}`);
+        }
+        else {
+            console.log(`File is written successfully!`);
+        }
+    });
+}
+exports.updateCache = updateCache;
 function getBodyWithApprovedBy(pullBody, reviewers) {
     pullBody = pullBody || "";
     const approveByIndex = pullBody.search(/Approved-by/);
@@ -106,7 +142,9 @@ function run() {
         const { data: pull } = yield octokit.rest.pulls.get(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number }));
         const { data: reviews } = yield octokit.rest.pulls.listReviews(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, per_page: 100 }));
         const approvedReviews = getApprovedReviews(reviews);
-        const reviewers = yield getReviewers(octokit, approvedReviews);
+        const cache = yield readCache();
+        const reviewers = yield getReviewers(octokit, approvedReviews, cache);
+        yield updateCache(cache);
         const body = getBodyWithApprovedBy(pull.body, reviewers);
         if (body !== pull.body) {
             yield octokit.rest.pulls.update(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, body: body }));

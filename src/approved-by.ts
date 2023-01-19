@@ -26,7 +26,11 @@ export function getApprovedReviews(reviews: Reviews): Reviews {
   return latestReviews.filter((review) => review.state.toLowerCase() === "approved");
 }
 
-export async function getReviewers(octokit: Octokit, reviews: Reviews, cache: Cache): Promise<Reviewers> {
+export async function getReviewers(
+  octokit: Octokit,
+  reviews: Reviews,
+  cache: Cache
+): Promise<Reviewers> {
   const reviewers: Reviewers = [];
 
   for (const review of reviews) {
@@ -39,7 +43,11 @@ export async function getReviewers(octokit: Octokit, reviews: Reviews, cache: Ca
   return reviewers;
 }
 
-export async function getReviewer(octokit: Octokit, username: string, cache: Cache): Promise<Reviewer> {
+export async function getReviewer(
+  octokit: Octokit,
+  username: string,
+  cache: Cache
+): Promise<Reviewer> {
   const reviewer = { username } as Reviewer;
 
   if (username in cache) {
@@ -56,17 +64,19 @@ export async function getReviewer(octokit: Octokit, username: string, cache: Cac
   return reviewer;
 }
 
-export function readCache(path: string = "./cache.json"): any {
+export function readCache(path = "./cache.json"): Cache {
   fs.readFile(path, "utf8", (err, data) => {
     if (err) {
       console.log(`Error reading file: ${err}`);
     } else {
-      return JSON.parse(data);
+      return JSON.parse(data) as Cache;
     }
   });
+
+  return {} as Cache;
 }
 
-export function updateCache(cache: Cache, path: string = "./cache.json"): void {
+export function updateCache(cache: Cache, path = "./cache.json"): void {
   fs.writeFile(path, JSON.stringify(cache), "utf8", (err) => {
     if (err) {
       console.log(`Error writing file: ${err}`);
