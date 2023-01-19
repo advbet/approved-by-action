@@ -56,8 +56,8 @@ export async function getReviewer(octokit: Octokit, username: string, cache: Cac
   return reviewer;
 }
 
-export function readCache(): any {
-  fs.readFile("./cache.json", "utf8", (err, data) => {
+export function readCache(path: string = "./cache.json"): any {
+  fs.readFile(path, "utf8", (err, data) => {
     if (err) {
       console.log(`Error reading file: ${err}`);
     } else {
@@ -66,8 +66,8 @@ export function readCache(): any {
   });
 }
 
-export function updateCache(filename: string, cache: Cache): void {
-  fs.writeFile("./cache.json", JSON.stringify(cache), "utf8", (err) => {
+export function updateCache(cache: Cache, path: string = "./cache.json"): void {
+  fs.writeFile(path, JSON.stringify(cache), "utf8", (err) => {
     if (err) {
       console.log(`Error writing file: ${err}`);
     } else {
@@ -128,10 +128,11 @@ export async function run(): Promise<void> {
   });
 
   const approvedReviews = getApprovedReviews(reviews);
+
   const cache: Cache = await readCache();
   const reviewers = await getReviewers(octokit, approvedReviews, cache);
+  await updateCache(cache);
 
-  await updateCache("", cache);
   const body = getBodyWithApprovedBy(pull.body, reviewers);
 
   if (body !== pull.body) {

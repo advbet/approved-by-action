@@ -2,10 +2,13 @@ import * as github from "@actions/github";
 import { expect, test } from "@jest/globals";
 import * as core from "@actions/core";
 import { Moctokit } from "@kie/mock-github";
-import { getApprovedReviews, getBodyWithApprovedBy, Reviewers, Reviews, getReviewer } from "../src/approved-by";
-
-const octokit = github.getOctokit('token');
-const moctokit = new Moctokit();
+import {
+  getApprovedReviews,
+  getBodyWithApprovedBy,
+  getReviewer,
+  Reviewers,
+  Reviews,
+} from "../src/approved-by";
 
 type RecursivePartial<T> = {
   [P in keyof T]?: RecursivePartial<T[P]>;
@@ -110,23 +113,53 @@ describe("setting Approved-by", () => {
 });
 
 describe("getting reviewers", () => {
-  test("get reviewer from octokit API", async () => {
+  const octokit = github.getOctokit("token");
+  const moctokit = new Moctokit();
+
+  test("get reviewer, no cache", async () => {
+    const cache = {};
     moctokit.rest.users
-      .getByUsername({username: "test1"})
-      .reply({ status: 200, data: { name: "name from API" } });
+      .getByUsername({ username: "test1" })
+      .reply({ status: 200, data: { name: "Mocked Name" } });
 
-    const result = await getReviewer(octokit, "test1", {});
-
-    expect(result).toEqual({ name: "name from API", username: "test1" });
+    const result = await getReviewer(octokit, "test1", cache);
+    expect(result).toEqual({ name: "Mocked Name", username: "test1" });
+    expect(cache).toEqual({ test1: "Mocked Name" });
   });
 
-  test("get reviewer from cache", async () => {
-    const cache = {
-      'test1': 'name from cache'
-    };
+  test("get reviewer, cache present", async () => {
+    const cache = { test1: "Cached Name" };
+    const result = await getReviewer(octokit, "test1", cache);
+
+    expect(result).toEqual({ name: "Cached Name", username: "test1" });
+  });
+
+  test("get reviewer, cache and mock present", async () => {
+    const cache = { test1: "Cached Name" };
+    moctokit.rest.users
+      .getByUsername({ username: "test1" })
+      .reply({ status: 200, data: { name: "Mocked Name" } });
 
     const result = await getReviewer(octokit, "test1", cache);
 
-    expect(result).toEqual({ name: "name from cache", username: "test1" });
+    expect(result).toEqual({ name: "Cached Name", username: "test1" });
+  });
+
+  test("get reviewer, no cache, multiple calls", async () => {
+    const cache = {};
+    moctokit.rest.users
+      .getByUsername({ username: "test1" })
+      .reply({ status: 200, data: { name: "Mocked Name" } });
+
+    let result = await getReviewer(octokit, "test1", cache);
+    expect(result).toEqual({ name: "Mocked Name", username: "test1" });
+    expect(cache).toEqual({ test1: "Mocked Name" });
+
+    moctokit.rest.users
+      .getByUsername({ username: "test1" })
+      .reply({ status: 200, data: { name: "Mocked Name Second" } });
+
+    result = await getReviewer(octokit, "test1", cache);
+    expect(result).toEqual({ name: "Mocked Name", username: "test1" });
   });
 });
