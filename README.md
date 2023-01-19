@@ -19,9 +19,8 @@ jobs:
     steps:
       - uses: actions/cache@v3
         with:
-          path: cache.json    
-      - uses: advbet/approved-by-action@v1
-      - uses: actions/cache/save@v3
-        with:
           path: cache.json
+          key: usernames-${{ hashFiles('**/cache.json') }}
+
+      - uses: advbet/approved-by-action@v1
 ```

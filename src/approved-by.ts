@@ -80,8 +80,6 @@ export function updateCache(cache: Cache, path = "./cache.json"): void {
   fs.writeFile(path, JSON.stringify(cache), "utf8", (err) => {
     if (err) {
       console.log(`Error writing file: ${err}`);
-    } else {
-      console.log(`File is written successfully!`);
     }
   });
 }
