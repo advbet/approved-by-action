@@ -139,7 +139,9 @@ export async function run(): Promise<void> {
   const approvedReviews = getApprovedReviews(reviews);
 
   const cache: Cache = await readCache();
+  core.info(JSON.stringify(cache));
   const reviewers = await getReviewers(octokit, approvedReviews, cache);
+  core.info(JSON.stringify(cache));
   await updateCache(cache);
 
   const body = getBodyWithApprovedBy(pull.body, reviewers);

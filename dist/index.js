@@ -74,6 +74,7 @@ function getReviewer(octokit, username, cache) {
             reviewer.name = cache[username];
         }
         else {
+            core.debug(`API call to get ${username} name`);
             const { data: user } = yield octokit.rest.users.getByUsername({ username: username });
             if (user && user.name) {
                 reviewer.name = user.name;
@@ -100,9 +101,6 @@ function updateCache(cache, path = "./cache.json") {
     fs.writeFile(path, JSON.stringify(cache), "utf8", (err) => {
         if (err) {
             console.log(`Error writing file: ${err}`);
-        }
-        else {
-            console.log(`File is written successfully!`);
         }
     });
 }
@@ -143,7 +141,9 @@ function run() {
         const { data: reviews } = yield octokit.rest.pulls.listReviews(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, per_page: 100 }));
         const approvedReviews = getApprovedReviews(reviews);
         const cache = yield readCache();
+        core.info(JSON.stringify(cache));
         const reviewers = yield getReviewers(octokit, approvedReviews, cache);
+        core.info(JSON.stringify(cache));
         yield updateCache(cache);
         const body = getBodyWithApprovedBy(pull.body, reviewers);
         if (body !== pull.body) {
