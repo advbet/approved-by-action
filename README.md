@@ -17,10 +17,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/cache@v3
+      - uses: actions/cache/restore@v3
+        id: cache
         with:
           path: cache.json
-          key: usernames-${{ hashFiles('**/cache.json') }}
+          key: usernames-${{ hashFiles('cache.json') }}
+          restore-keys: usernames-
 
       - uses: advbet/approved-by-action@v1
+
+      - uses: actions/cache/save@v3
+        if: endsWith(steps.cache.outputs.cache-matched-key, hashFiles('cache.json')) == 'false'
+        with:
+          path: cache.json
+          key: usernames-${{ hashFiles('cache.json') }}
 ```
