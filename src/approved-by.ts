@@ -56,7 +56,7 @@ export async function getReviewer(
     core.info(`API call to get ${username} name`);
     const { data: user } = await octokit.rest.users.getByUsername({ username: username });
 
-    if (user && user.name) {
+    if (user && user.name !== null) {
       reviewer.name = user.name;
       cache[username] = user.name;
     }
@@ -76,12 +76,6 @@ export function updateCache(cache: Cache, path = "./cache.json"): void {
   } catch (err) {
     console.log(`Error writing file: ${err}`);
   }
-
-  // fs.writeFile(path, JSON.stringify(cache), "utf8", (err) => {
-  //   if (err) {
-  //     console.log(`Error writing file: ${err}`);
-  //   }
-  // });
 }
 
 export function getBodyWithApprovedBy(pullBody: string | null, reviewers: Reviewers): string {
@@ -138,9 +132,7 @@ export async function run(): Promise<void> {
   const approvedReviews = getApprovedReviews(reviews);
 
   const cache: Cache = readCache();
-  core.info(JSON.stringify(cache));
   const reviewers = await getReviewers(octokit, approvedReviews, cache);
-  core.info(JSON.stringify(cache));
   updateCache(cache);
 
   const body = getBodyWithApprovedBy(pull.body, reviewers);
