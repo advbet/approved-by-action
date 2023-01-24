@@ -86,23 +86,22 @@ function getReviewer(octokit, username, cache) {
 }
 exports.getReviewer = getReviewer;
 function readCache(path = "./cache.json") {
-    fs.readFile(path, "utf8", (err, data) => {
-        if (err) {
-            console.log(`Error reading file: ${err}`);
-        }
-        else {
-            return JSON.parse(data);
-        }
-    });
-    return {};
+    const data = fs.readFileSync(path, "utf8");
+    return JSON.parse(data);
 }
 exports.readCache = readCache;
 function updateCache(cache, path = "./cache.json") {
-    fs.writeFile(path, JSON.stringify(cache), "utf8", (err) => {
-        if (err) {
-            console.log(`Error writing file: ${err}`);
-        }
-    });
+    try {
+        fs.writeFileSync(path, JSON.stringify(cache), "utf8");
+    }
+    catch (err) {
+        console.log(`Error writing file: ${err}`);
+    }
+    // fs.writeFile(path, JSON.stringify(cache), "utf8", (err) => {
+    //   if (err) {
+    //     console.log(`Error writing file: ${err}`);
+    //   }
+    // });
 }
 exports.updateCache = updateCache;
 function getBodyWithApprovedBy(pullBody, reviewers) {
@@ -140,11 +139,11 @@ function run() {
         const { data: pull } = yield octokit.rest.pulls.get(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number }));
         const { data: reviews } = yield octokit.rest.pulls.listReviews(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, per_page: 100 }));
         const approvedReviews = getApprovedReviews(reviews);
-        const cache = yield readCache();
+        const cache = readCache();
         core.info(JSON.stringify(cache));
         const reviewers = yield getReviewers(octokit, approvedReviews, cache);
         core.info(JSON.stringify(cache));
-        yield updateCache(cache);
+        updateCache(cache);
         const body = getBodyWithApprovedBy(pull.body, reviewers);
         if (body !== pull.body) {
             yield octokit.rest.pulls.update(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, body: body }));

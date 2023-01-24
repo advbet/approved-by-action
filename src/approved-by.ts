@@ -66,23 +66,22 @@ export async function getReviewer(
 }
 
 export function readCache(path = "./cache.json"): Cache {
-  fs.readFile(path, "utf8", (err, data) => {
-    if (err) {
-      console.log(`Error reading file: ${err}`);
-    } else {
-      return JSON.parse(data) as Cache;
-    }
-  });
-
-  return {} as Cache;
+  const data = fs.readFileSync(path, "utf8");
+  return JSON.parse(data) as Cache;
 }
 
 export function updateCache(cache: Cache, path = "./cache.json"): void {
-  fs.writeFile(path, JSON.stringify(cache), "utf8", (err) => {
-    if (err) {
-      console.log(`Error writing file: ${err}`);
-    }
-  });
+  try {
+    fs.writeFileSync(path, JSON.stringify(cache), "utf8");
+  } catch (err) {
+    console.log(`Error writing file: ${err}`);
+  }
+
+  // fs.writeFile(path, JSON.stringify(cache), "utf8", (err) => {
+  //   if (err) {
+  //     console.log(`Error writing file: ${err}`);
+  //   }
+  // });
 }
 
 export function getBodyWithApprovedBy(pullBody: string | null, reviewers: Reviewers): string {
@@ -138,11 +137,11 @@ export async function run(): Promise<void> {
 
   const approvedReviews = getApprovedReviews(reviews);
 
-  const cache: Cache = await readCache();
+  const cache: Cache = readCache();
   core.info(JSON.stringify(cache));
   const reviewers = await getReviewers(octokit, approvedReviews, cache);
   core.info(JSON.stringify(cache));
-  await updateCache(cache);
+  updateCache(cache);
 
   const body = getBodyWithApprovedBy(pull.body, reviewers);
 
