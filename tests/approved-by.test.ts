@@ -173,4 +173,15 @@ describe("getting reviewer", () => {
     expect(result).toEqual({ name: "", username: "test5" });
     expect(cache).toEqual({ test5: "" });
   });
+
+  test("null name, empty cache", async () => {
+    const cache = {};
+    moctokit.rest.users
+      .getByUsername({ username: "test6" })
+      .reply({ status: 200, data: { name: null } });
+
+    const result = await getReviewer(octokit, "test6", cache);
+    expect(result).toEqual({ name: "", username: "test6" });
+    expect(cache).toEqual({ test6: "" });
+  });
 });

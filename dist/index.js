@@ -76,9 +76,9 @@ function getReviewer(octokit, username, cache) {
         else {
             core.info(`API call to get ${username} name`);
             const { data: user } = yield octokit.rest.users.getByUsername({ username: username });
-            if (user && user.name !== null) {
-                reviewer.name = user.name;
-                cache[username] = user.name;
+            if (user) {
+                reviewer.name = user.name || "";
+                cache[username] = reviewer.name;
             }
         }
         return reviewer;
