@@ -110,6 +110,18 @@ describe("setting Approved-by", () => {
     const reviewers: RecursivePartial<Reviewers> = [{ username: "test1" }];
     expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe("Test\n\nApproved-by: test1");
   });
+
+  test("username with name", () => {
+    const body = "Test";
+    const reviewers: RecursivePartial<Reviewers> = [{ username: "test1", name: "Test Tester" }];
+    expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe("Test\n\nApproved-by: test1 (Test Tester)");
+  });
+
+  test("empty name", () => {
+    const body = "Test";
+    const reviewers: RecursivePartial<Reviewers> = [{ username: "test1", name: "" }];
+    expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe("Test\n\nApproved-by: test1");
+  });
 });
 
 describe("getting reviewer", () => {
