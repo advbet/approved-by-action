@@ -126,6 +126,8 @@ describe("setting Approved-by", () => {
 
 describe("getting reviewer", () => {
   const octokit = github.getOctokit("token");
+  // as we are reusing same moctokit instance we must pass different parameters
+  // not to get previous "cached" results
   const moctokit = new Moctokit();
 
   test("no cache", async () => {
