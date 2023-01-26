@@ -86,8 +86,14 @@ function getReviewer(octokit, username, cache) {
 }
 exports.getReviewer = getReviewer;
 function readCache(path = "./cache.json") {
-    const data = fs.readFileSync(path, "utf8");
-    return JSON.parse(data);
+    try {
+        const data = fs.readFileSync(path, "utf8");
+        return JSON.parse(data);
+    }
+    catch (err) {
+        console.log(`Error reading file: ${err}`);
+    }
+    return {};
 }
 exports.readCache = readCache;
 function updateCache(cache, path = "./cache.json") {
