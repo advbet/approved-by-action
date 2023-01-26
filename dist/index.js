@@ -39,9 +39,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = exports.getBodyWithApprovedBy = exports.getReviewers = exports.getApprovedReviews = void 0;
+exports.run = exports.getBodyWithApprovedBy = exports.updateCache = exports.readCache = exports.getReviewer = exports.getReviewers = exports.getApprovedReviews = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
+const fs = __importStar(__nccwpck_require__(7147));
 function getApprovedReviews(reviews) {
     const latestReviews = reviews
         .reverse()
@@ -53,24 +54,51 @@ function getApprovedReviews(reviews) {
     return latestReviews.filter((review) => review.state.toLowerCase() === "approved");
 }
 exports.getApprovedReviews = getApprovedReviews;
-function getReviewers(octokit, reviews) {
+function getReviewers(octokit, reviews, cache) {
     return __awaiter(this, void 0, void 0, function* () {
         const reviewers = [];
         for (const review of reviews) {
             if (!review.user) {
                 continue;
             }
-            const reviewer = { username: review.user.login };
-            const { data: user } = yield octokit.rest.users.getByUsername({ username: review.user.login });
-            if (user && user.name) {
-                reviewer.name = user.name;
-            }
-            reviewers.push(reviewer);
+            reviewers.push(yield getReviewer(octokit, review.user.login, cache));
         }
         return reviewers;
     });
 }
 exports.getReviewers = getReviewers;
+function getReviewer(octokit, username, cache) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const reviewer = { username };
+        if (username in cache) {
+            reviewer.name = cache[username];
+        }
+        else {
+            core.info(`API call to get ${username} name`);
+            const { data: user } = yield octokit.rest.users.getByUsername({ username: username });
+            if (user) {
+                reviewer.name = user.name || "";
+                cache[username] = reviewer.name;
+            }
+        }
+        return reviewer;
+    });
+}
+exports.getReviewer = getReviewer;
+function readCache(path = "./cache.json") {
+    const data = fs.readFileSync(path, "utf8");
+    return JSON.parse(data);
+}
+exports.readCache = readCache;
+function updateCache(cache, path = "./cache.json") {
+    try {
+        fs.writeFileSync(path, JSON.stringify(cache), "utf8");
+    }
+    catch (err) {
+        console.log(`Error writing file: ${err}`);
+    }
+}
+exports.updateCache = updateCache;
 function getBodyWithApprovedBy(pullBody, reviewers) {
     pullBody = pullBody || "";
     const approveByIndex = pullBody.search(/Approved-by/);
@@ -106,7 +134,9 @@ function run() {
         const { data: pull } = yield octokit.rest.pulls.get(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number }));
         const { data: reviews } = yield octokit.rest.pulls.listReviews(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, per_page: 100 }));
         const approvedReviews = getApprovedReviews(reviews);
-        const reviewers = yield getReviewers(octokit, approvedReviews);
+        const cache = readCache();
+        const reviewers = yield getReviewers(octokit, approvedReviews, cache);
+        updateCache(cache);
         const body = getBodyWithApprovedBy(pull.body, reviewers);
         if (body !== pull.body) {
             yield octokit.rest.pulls.update(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, body: body }));
@@ -6182,6 +6212,20 @@ const isDomainOrSubdomain = function isDomainOrSubdomain(destination, original) 
 };
 
 /**
+ * isSameProtocol reports whether the two provided URLs use the same protocol.
+ *
+ * Both domains must already be in canonical form.
+ * @param {string|URL} original
+ * @param {string|URL} destination
+ */
+const isSameProtocol = function isSameProtocol(destination, original) {
+	const orig = new URL$1(original).protocol;
+	const dest = new URL$1(destination).protocol;
+
+	return orig === dest;
+};
+
+/**
  * Fetch function
  *
  * @param   Mixed    url   Absolute url or Request instance
@@ -6212,7 +6256,7 @@ function fetch(url, opts) {
 			let error = new AbortError('The user aborted a request.');
 			reject(error);
 			if (request.body && request.body instanceof Stream.Readable) {
-				request.body.destroy(error);
+				destroyStream(request.body, error);
 			}
 			if (!response || !response.body) return;
 			response.body.emit('error', error);
@@ -6253,8 +6297,40 @@ function fetch(url, opts) {
 
 		req.on('error', function (err) {
 			reject(new FetchError(`request to ${request.url} failed, reason: ${err.message}`, 'system', err));
+
+			if (response && response.body) {
+				destroyStream(response.body, err);
+			}
+
 			finalize();
 		});
+
+		fixResponseChunkedTransferBadEnding(req, function (err) {
+			if (signal && signal.aborted) {
+				return;
+			}
+
+			destroyStream(response.body, err);
+		});
+
+		/* c8 ignore next 18 */
+		if (parseInt(process.version.substring(1)) < 14) {
+			// Before Node.js 14, pipeline() does not fully support async iterators and does not always
+			// properly handle when the socket close/end events are out of order.
+			req.on('socket', function (s) {
+				s.addListener('close', function (hadError) {
+					// if a data listener is still present we didn't end cleanly
+					const hasDataListener = s.listenerCount('data') > 0;
+
+					// if end happened before close but the socket didn't emit an error, do it now
+					if (response && hasDataListener && !hadError && !(signal && signal.aborted)) {
+						const err = new Error('Premature close');
+						err.code = 'ERR_STREAM_PREMATURE_CLOSE';
+						response.body.emit('error', err);
+					}
+				});
+			});
+		}
 
 		req.on('response', function (res) {
 			clearTimeout(reqTimeout);
@@ -6327,7 +6403,7 @@ function fetch(url, opts) {
 							size: request.size
 						};
 
-						if (!isDomainOrSubdomain(request.url, locationURL)) {
+						if (!isDomainOrSubdomain(request.url, locationURL) || !isSameProtocol(request.url, locationURL)) {
 							for (const name of ['authorization', 'www-authenticate', 'cookie', 'cookie2']) {
 								requestOpts.headers.delete(name);
 							}
@@ -6420,6 +6496,13 @@ function fetch(url, opts) {
 					response = new Response(body, response_options);
 					resolve(response);
 				});
+				raw.on('end', function () {
+					// some old IIS servers return zero-length OK deflate responses, so 'data' is never emitted.
+					if (!response) {
+						response = new Response(body, response_options);
+						resolve(response);
+					}
+				});
 				return;
 			}
 
@@ -6439,6 +6522,41 @@ function fetch(url, opts) {
 		writeToStream(req, request);
 	});
 }
+function fixResponseChunkedTransferBadEnding(request, errorCallback) {
+	let socket;
+
+	request.on('socket', function (s) {
+		socket = s;
+	});
+
+	request.on('response', function (response) {
+		const headers = response.headers;
+
+		if (headers['transfer-encoding'] === 'chunked' && !headers['content-length']) {
+			response.once('close', function (hadError) {
+				// if a data listener is still present we didn't end cleanly
+				const hasDataListener = socket.listenerCount('data') > 0;
+
+				if (hasDataListener && !hadError) {
+					const err = new Error('Premature close');
+					err.code = 'ERR_STREAM_PREMATURE_CLOSE';
+					errorCallback(err);
+				}
+			});
+		}
+	});
+}
+
+function destroyStream(stream, err) {
+	if (stream.destroy) {
+		stream.destroy(err);
+	} else {
+		// node < 8
+		stream.emit('error', err);
+		stream.end();
+	}
+}
+
 /**
  * Redirect code matching
  *

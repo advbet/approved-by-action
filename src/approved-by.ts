@@ -1,5 +1,6 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
+import * as fs from "fs";
 import { components } from "@octokit/openapi-types";
 import { GitHub } from "@actions/github/lib/utils";
 
@@ -11,6 +12,7 @@ export type Reviewer = {
   name: string;
 };
 export type Reviewers = Reviewer[];
+export type Cache = { [key: string]: string };
 
 export function getApprovedReviews(reviews: Reviews): Reviews {
   const latestReviews = reviews
@@ -24,22 +26,56 @@ export function getApprovedReviews(reviews: Reviews): Reviews {
   return latestReviews.filter((review) => review.state.toLowerCase() === "approved");
 }
 
-export async function getReviewers(octokit: Octokit, reviews: Reviews): Promise<Reviewers> {
+export async function getReviewers(
+  octokit: Octokit,
+  reviews: Reviews,
+  cache: Cache
+): Promise<Reviewers> {
   const reviewers: Reviewers = [];
 
   for (const review of reviews) {
     if (!review.user) {
       continue;
     }
-    const reviewer = { username: review.user.login } as Reviewer;
-    const { data: user } = await octokit.rest.users.getByUsername({ username: review.user.login });
-
-    if (user && user.name) {
-      reviewer.name = user.name;
-    }
-    reviewers.push(reviewer);
+    reviewers.push(await getReviewer(octokit, review.user.login, cache));
   }
+
   return reviewers;
+}
+
+export async function getReviewer(
+  octokit: Octokit,
+  username: string,
+  cache: Cache
+): Promise<Reviewer> {
+  const reviewer = { username } as Reviewer;
+
+  if (username in cache) {
+    reviewer.name = cache[username];
+  } else {
+    core.info(`API call to get ${username} name`);
+    const { data: user } = await octokit.rest.users.getByUsername({ username: username });
+
+    if (user) {
+      reviewer.name = user.name || "";
+      cache[username] = reviewer.name;
+    }
+  }
+
+  return reviewer;
+}
+
+export function readCache(path = "./cache.json"): Cache {
+  const data = fs.readFileSync(path, "utf8");
+  return JSON.parse(data) as Cache;
+}
+
+export function updateCache(cache: Cache, path = "./cache.json"): void {
+  try {
+    fs.writeFileSync(path, JSON.stringify(cache), "utf8");
+  } catch (err) {
+    console.log(`Error writing file: ${err}`);
+  }
 }
 
 export function getBodyWithApprovedBy(pullBody: string | null, reviewers: Reviewers): string {
@@ -94,7 +130,11 @@ export async function run(): Promise<void> {
   });
 
   const approvedReviews = getApprovedReviews(reviews);
-  const reviewers = await getReviewers(octokit, approvedReviews);
+
+  const cache: Cache = readCache();
+  const reviewers = await getReviewers(octokit, approvedReviews, cache);
+  updateCache(cache);
+
   const body = getBodyWithApprovedBy(pull.body, reviewers);
 
   if (body !== pull.body) {
