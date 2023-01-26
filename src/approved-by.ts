@@ -66,8 +66,14 @@ export async function getReviewer(
 }
 
 export function readCache(path = "./cache.json"): Cache {
-  const data = fs.readFileSync(path, "utf8");
-  return JSON.parse(data) as Cache;
+  try {
+    const data = fs.readFileSync(path, "utf8");
+    return JSON.parse(data) as Cache;
+  } catch (err) {
+    console.log(`Error reading file: ${err}`);
+  }
+
+  return {} as Cache;
 }
 
 export function updateCache(cache: Cache, path = "./cache.json"): void {
