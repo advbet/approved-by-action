@@ -99,7 +99,7 @@ export function getBodyWithApprovedBy(pullBody: string | null, reviewers: Review
 
   // body with "Approved-by" already set
   if (approveByIndex > -1) {
-    pullBody = pullBody.replace(/\nApproved-by:.*/s, approvedByBody);
+    pullBody = pullBody.replace(/\nApproved-by:[\s\S]*/, approvedByBody);
   }
 
   // body without "Approved-by"
