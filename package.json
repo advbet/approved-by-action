@@ -13,12 +13,12 @@
   },
   "dependencies": {
     "@actions/core": "^1.11.1",
-    "@actions/github": "^5.1.1",
+    "@actions/github": "^6.0.1",
     "@kie/mock-github": "^1.1.0",
     "@octokit/openapi-types": "^17.2.0"
   },
   "devDependencies": {
-    "@octokit/rest": "^19.0.13",
+    "@octokit/rest": "^21.1.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^18.19.103",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
