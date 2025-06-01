@@ -14,7 +14,7 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^5.1.1",
-    "@kie/mock-github": "^1.1.0",
+    "@kie/mock-github": "^2.0.1",
     "@octokit/openapi-types": "^17.2.0"
   },
   "devDependencies": {
