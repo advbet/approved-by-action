@@ -37,7 +37,7 @@ describe("getting approvals from reviews", () => {
       expect.arrayContaining([
         expect.objectContaining({ user: expect.objectContaining({ login: "test2" }) }),
         expect.objectContaining({ user: expect.objectContaining({ login: "test1" }) }),
-      ])
+      ]),
     );
   });
 
@@ -55,7 +55,7 @@ describe("getting approvals from reviews", () => {
     expect(getApprovedReviews(reviews as Reviews)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ user: expect.objectContaining({ login: "test1" }) }),
-      ])
+      ]),
     );
   });
 
@@ -87,7 +87,7 @@ describe("getting approvals from reviews", () => {
     expect(getApprovedReviews(reviews as Reviews)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ user: expect.objectContaining({ login: "test1" }) }),
-      ])
+      ]),
     );
   });
 });
@@ -114,7 +114,9 @@ describe("setting Approved-by", () => {
   test("username with name", () => {
     const body = "Test";
     const reviewers: RecursivePartial<Reviewers> = [{ username: "test1", name: "Test Tester" }];
-    expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe("Test\n\nApproved-by: test1 (Test Tester)");
+    expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe(
+      "Test\n\nApproved-by: test1 (Test Tester)",
+    );
   });
 
   test("empty name", () => {

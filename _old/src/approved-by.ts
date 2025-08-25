@@ -29,7 +29,7 @@ export function getApprovedReviews(reviews: Reviews): Reviews {
 export async function getReviewers(
   octokit: Octokit,
   reviews: Reviews,
-  cache: Cache
+  cache: Cache,
 ): Promise<Reviewers> {
   const reviewers: Reviewers = [];
 
@@ -46,7 +46,7 @@ export async function getReviewers(
 export async function getReviewer(
   octokit: Octokit,
   username: string,
-  cache: Cache
+  cache: Cache,
 ): Promise<Reviewer> {
   const reviewer = { username } as Reviewer;
 
