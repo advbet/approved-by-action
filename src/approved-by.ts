@@ -1,7 +1,7 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import * as fs from "fs";
-import { components } from "@octokit/openapi-types";
+import type { components } from "@octokit/openapi-types";
 import { GitHub } from "@actions/github/lib/utils";
 
 export type Octokit = InstanceType<typeof GitHub>;

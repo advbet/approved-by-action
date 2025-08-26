@@ -1,28 +1,29 @@
 import * as github from "@actions/github";
-import { expect, test } from "@jest/globals";
+import { describe, expect, it, spyOn, mock } from "bun:test";
 import * as core from "@actions/core";
 import { Moctokit } from "@kie/mock-github";
 import {
   getApprovedReviews,
   getBodyWithApprovedBy,
   getReviewer,
-  Reviewers,
-  Reviews,
+  type Reviewers,
+  type Reviews,
+  type Octokit,
 } from "../src/approved-by";
 
 type RecursivePartial<T> = {
   [P in keyof T]?: RecursivePartial<T[P]>;
 };
 
-jest.spyOn(core, "info").mockImplementation(() => {
+spyOn(core, "info").mockImplementation(() => {
   return;
 });
-jest.spyOn(core, "debug").mockImplementation(() => {
+spyOn(core, "debug").mockImplementation(() => {
   return;
 });
 
 describe("getting approvals from reviews", () => {
-  test("2 approvals from different users", () => {
+  it("should get 2 approvals from different users", () => {
     const reviews: RecursivePartial<Reviews> = [
       {
         user: { id: 1, login: "test1" },
@@ -41,7 +42,7 @@ describe("getting approvals from reviews", () => {
     );
   });
 
-  test("1 approval, 1 dismiss from different users", () => {
+  it("should get 1 approval, 1 dismiss from different users", () => {
     const reviews: RecursivePartial<Reviews> = [
       {
         user: { id: 1, login: "test1" },
@@ -59,7 +60,7 @@ describe("getting approvals from reviews", () => {
     );
   });
 
-  test("1 approval, 1 dismiss from same user, dismiss last", () => {
+  it("should get 1 approval, 1 dismiss from same user, dismiss last", () => {
     const reviews: RecursivePartial<Reviews> = [
       {
         user: { id: 1, login: "test1" },
@@ -73,7 +74,7 @@ describe("getting approvals from reviews", () => {
     expect(getApprovedReviews(reviews as Reviews)).toEqual([]);
   });
 
-  test("1 approval, 1 dismiss from same user, dismiss first", () => {
+  it("should get 1 approval, 1 dismiss from same user, dismiss first", () => {
     const reviews: RecursivePartial<Reviews> = [
       {
         user: { id: 1, login: "test1" },
@@ -93,25 +94,25 @@ describe("getting approvals from reviews", () => {
 });
 
 describe("setting Approved-by", () => {
-  test("null body", () => {
+  it("should handle null body", () => {
     const body = null;
     const reviewers: RecursivePartial<Reviewers> = [{ username: "test1" }];
     expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe("\n\nApproved-by: test1");
   });
 
-  test("existing body without Approved-by", () => {
+  it("should get existing body without Approved-by", () => {
     const body = "Test";
     const reviewers: RecursivePartial<Reviewers> = [{ username: "test1" }];
     expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe("Test\n\nApproved-by: test1");
   });
 
-  test("existing body with Approved-by", () => {
+  it("should get existing body with Approved-by", () => {
     const body = "Test\n\nApproved-by: test2";
     const reviewers: RecursivePartial<Reviewers> = [{ username: "test1" }];
     expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe("Test\n\nApproved-by: test1");
   });
 
-  test("username with name", () => {
+  it("should get username with name", () => {
     const body = "Test";
     const reviewers: RecursivePartial<Reviewers> = [{ username: "test1", name: "Test Tester" }];
     expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe(
@@ -119,7 +120,7 @@ describe("setting Approved-by", () => {
     );
   });
 
-  test("empty name", () => {
+  it("should handle empty name", () => {
     const body = "Test";
     const reviewers: RecursivePartial<Reviewers> = [{ username: "test1", name: "" }];
     expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe("Test\n\nApproved-by: test1");
@@ -132,8 +133,9 @@ describe("getting reviewer", () => {
   // not to get previous "cached" results
   const moctokit = new Moctokit();
 
-  test("no cache", async () => {
+  it("should get user without cache", async () => {
     const cache = {};
+
     moctokit.rest.users
       .getByUsername({ username: "test1" })
       .reply({ status: 200, data: { name: "Mocked Name" } });
@@ -143,14 +145,14 @@ describe("getting reviewer", () => {
     expect(cache).toEqual({ test1: "Mocked Name" });
   });
 
-  test("cache present", async () => {
+  it("should get user with cache present", async () => {
     const cache = { test2: "Cached Name" };
     const result = await getReviewer(octokit, "test2", cache);
 
     expect(result).toEqual({ name: "Cached Name", username: "test2" });
   });
 
-  test("cache and mock present", async () => {
+  it("should get user with cache and mock present", async () => {
     const cache = { test3: "Cached Name" };
     moctokit.rest.users
       .getByUsername({ username: "test3" })
@@ -161,7 +163,7 @@ describe("getting reviewer", () => {
     expect(result).toEqual({ name: "Cached Name", username: "test3" });
   });
 
-  test("no cache, multiple calls", async () => {
+  it("should get user without cache, multiple calls", async () => {
     const cache = {};
     moctokit.rest.users
       .getByUsername({ username: "test4" })
@@ -179,7 +181,7 @@ describe("getting reviewer", () => {
     expect(result).toEqual({ name: "Mocked Name", username: "test4" });
   });
 
-  test("empty name, empty cache", async () => {
+  it("should handle empty name, empty cache", async () => {
     const cache = {};
     moctokit.rest.users
       .getByUsername({ username: "test5" })
@@ -190,7 +192,7 @@ describe("getting reviewer", () => {
     expect(cache).toEqual({ test5: "" });
   });
 
-  test("null name, empty cache", async () => {
+  it("should handle null name, empty cache", async () => {
     const cache = {};
     moctokit.rest.users
       .getByUsername({ username: "test6" })
