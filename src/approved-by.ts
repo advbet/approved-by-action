@@ -1,8 +1,8 @@
+import * as fs from "node:fs";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 import type { GitHub } from "@actions/github/lib/utils";
 import type { components } from "@octokit/openapi-types";
-import * as fs from "fs";
 
 export type Octokit = InstanceType<typeof GitHub>;
 export type Review = components["schemas"]["pull-request-review"];

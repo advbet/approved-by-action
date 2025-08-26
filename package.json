@@ -1,8 +1,13 @@
 {
   "name": "approved-by-action",
-  "module": "index.ts",
+  "module": "dist/index.js",
   "type": "module",
   "private": true,
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --outfile ./dist/index.js --target=node --sourcemap=linked",
+    "lint": "tsc --noEmit && biome check",
+    "lint:fix": "biome check --fix"
+  },
   "devDependencies": {
     "@biomejs/biome": "2.2.2",
     "@types/bun": "latest"
