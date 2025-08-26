@@ -51,7 +51,7 @@ export async function getReviewer(
   const reviewer = { username } as Reviewer;
 
   if (username in cache) {
-    reviewer.name = cache[username];
+    reviewer.name = cache[username] || "unknown";
   } else {
     core.info(`API call to get ${username} name`);
     const { data: user } = await octokit.rest.users.getByUsername({ username: username });
