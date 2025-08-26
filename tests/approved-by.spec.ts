@@ -1,14 +1,11 @@
-import * as github from "@actions/github";
-import { describe, expect, it, spyOn, mock } from "bun:test";
+import { describe, expect, it, spyOn, mock, beforeEach, afterEach } from "bun:test";
 import * as core from "@actions/core";
-import { Moctokit } from "@kie/mock-github";
 import {
   getApprovedReviews,
   getBodyWithApprovedBy,
   getReviewer,
   type Reviewers,
   type Reviews,
-  type Octokit,
 } from "../src/approved-by";
 
 type RecursivePartial<T> = {
@@ -128,77 +125,95 @@ describe("setting Approved-by", () => {
 });
 
 describe("getting reviewer", () => {
-  const octokit = github.getOctokit("token");
-  // as we are reusing same moctokit instance we must pass different parameters
-  // not to get previous "cached" results
-  const moctokit = new Moctokit();
+  let mockOctokit: any;
+
+  beforeEach(() => {
+    mockOctokit = {
+      rest: {
+        users: {
+          getByUsername: mock(() => Promise.resolve({ data: { name: "Default Mock Name" } })),
+        },
+      },
+    };
+  });
+
+  afterEach(() => {
+    mock.restore();
+  });
 
   it("should get user without cache", async () => {
     const cache = {};
 
-    moctokit.rest.users
-      .getByUsername({ username: "test1" })
-      .reply({ status: 200, data: { name: "Mocked Name" } });
+    mockOctokit.rest.users.getByUsername.mockResolvedValue({
+      data: { name: "Mocked Name 1" }
+    });
 
-    const result = await getReviewer(octokit, "test1", cache);
-    expect(result).toEqual({ name: "Mocked Name", username: "test1" });
-    expect(cache).toEqual({ test1: "Mocked Name" });
+    const result = await getReviewer(mockOctokit, "test1", cache);
+    expect(result).toEqual({ name: "Mocked Name 1", username: "test1" });
+    expect(cache).toEqual({ test1: "Mocked Name 1" });
+    expect(mockOctokit.rest.users.getByUsername).toHaveBeenCalledWith({ username: "test1" });
   });
 
   it("should get user with cache present", async () => {
-    const cache = { test2: "Cached Name" };
-    const result = await getReviewer(octokit, "test2", cache);
+    const cache = { test2: "Cached Name 2" };
+    const result = await getReviewer(mockOctokit, "test2", cache);
 
-    expect(result).toEqual({ name: "Cached Name", username: "test2" });
+    expect(result).toEqual({ name: "Cached Name 2", username: "test2" });
+    expect(mockOctokit.rest.users.getByUsername).not.toHaveBeenCalled();
   });
 
   it("should get user with cache and mock present", async () => {
-    const cache = { test3: "Cached Name" };
-    moctokit.rest.users
-      .getByUsername({ username: "test3" })
-      .reply({ status: 200, data: { name: "Mocked Name" } });
+    const cache = { test3: "Cached Name 3" };
 
-    const result = await getReviewer(octokit, "test3", cache);
+    mockOctokit.rest.users.getByUsername.mockResolvedValue({
+      data: { name: "Mocked Name 3" }
+    });
 
-    expect(result).toEqual({ name: "Cached Name", username: "test3" });
+    const result = await getReviewer(mockOctokit, "test3", cache);
+
+    expect(result).toEqual({ name: "Cached Name 3", username: "test3" });
+    expect(mockOctokit.rest.users.getByUsername).not.toHaveBeenCalled();
   });
 
   it("should get user without cache, multiple calls", async () => {
     const cache = {};
-    moctokit.rest.users
-      .getByUsername({ username: "test4" })
-      .setResponse([
-        { status: 200, data: { name: "Mocked Name" } },
-        { status: 200, data: { name: "Mocked Name Second" } },
-      ])
-      .reply();
 
-    let result = await getReviewer(octokit, "test4", cache);
-    expect(result).toEqual({ name: "Mocked Name", username: "test4" });
-    expect(cache).toEqual({ test4: "Mocked Name" });
+    mockOctokit.rest.users.getByUsername.mockResolvedValue({
+      data: { name: "Mocked Name 4" }
+    });
 
-    result = await getReviewer(octokit, "test4", cache);
-    expect(result).toEqual({ name: "Mocked Name", username: "test4" });
+    let result = await getReviewer(mockOctokit, "test4", cache);
+    expect(result).toEqual({ name: "Mocked Name 4", username: "test4" });
+    expect(cache).toEqual({ test4: "Mocked Name 4" });
+
+    // Second call should use cache
+    result = await getReviewer(mockOctokit, "test4", cache);
+    expect(result).toEqual({ name: "Mocked Name 4", username: "test4" });
+
+    // API should only be called once
+    expect(mockOctokit.rest.users.getByUsername).toHaveBeenCalledTimes(1);
   });
 
   it("should handle empty name, empty cache", async () => {
     const cache = {};
-    moctokit.rest.users
-      .getByUsername({ username: "test5" })
-      .reply({ status: 200, data: { name: "" } });
 
-    const result = await getReviewer(octokit, "test5", cache);
+    mockOctokit.rest.users.getByUsername.mockResolvedValue({
+      data: { name: "" }
+    });
+
+    const result = await getReviewer(mockOctokit, "test5", cache);
     expect(result).toEqual({ name: "", username: "test5" });
     expect(cache).toEqual({ test5: "" });
   });
 
   it("should handle null name, empty cache", async () => {
     const cache = {};
-    moctokit.rest.users
-      .getByUsername({ username: "test6" })
-      .reply({ status: 200, data: { name: null } });
 
-    const result = await getReviewer(octokit, "test6", cache);
+    mockOctokit.rest.users.getByUsername.mockResolvedValue({
+      data: { name: null }
+    });
+
+    const result = await getReviewer(mockOctokit, "test6", cache);
     expect(result).toEqual({ name: "", username: "test6" });
     expect(cache).toEqual({ test6: "" });
   });
