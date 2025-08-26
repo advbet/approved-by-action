@@ -29,7 +29,7 @@ jobs:
       - uses: advbet/approved-by-action@v2
 
       - uses: actions/cache/save@v4
-        if: endsWith(steps.cache.outputs.cache-matched-key, hashFiles('cache.json')) == false
+        if: hashFiles('cache.json') != '' && endsWith(steps.cache.outputs.cache-matched-key, hashFiles('cache.json')) == false
         with:
           path: cache.json
           key: usernames-${{ hashFiles('cache.json') }}
