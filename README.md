@@ -1,15 +1,34 @@
-# approved-by-action
+# Approved by GitHub Action
 
-To install dependencies:
+This action will add `Approved-by: <username> (<name>)` to the bottom of PR description.
+In combination with "Default commit message -> Default to pull request title and description" all your commits will have list of people who approved them.
 
-```bash
-bun install
+## Usage
+
+```yml
+name: Approved by
+
+on:
+  pull_request_review:
+    types: [submitted, dismissed]
+
+jobs:
+  approved-by:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/cache/restore@v4
+        id: cache
+        with:
+          path: cache.json
+          key: usernames-${{ hashFiles('cache.json') }}
+          restore-keys: usernames-
+
+      - uses: advbet/approved-by-action@v2
+
+      - uses: actions/cache/save@v4
+        if: endsWith(steps.cache.outputs.cache-matched-key, hashFiles('cache.json')) == false
+        with:
+          path: cache.json
+          key: usernames-${{ hashFiles('cache.json') }}
 ```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.20. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.

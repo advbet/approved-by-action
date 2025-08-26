@@ -2,7 +2,6 @@
   "name": "approved-by-action",
   "module": "dist/index.js",
   "type": "module",
-  "private": true,
   "scripts": {
     "build": "bun build ./src/index.ts --outdir ./dist --outfile ./dist/index.js --target=node --sourcemap=linked --minify",
     "lint": "tsc --noEmit && biome check",
