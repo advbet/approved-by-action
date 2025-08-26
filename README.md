@@ -5,6 +5,8 @@ In combination with "Default commit message -> Default to pull request title and
 
 ## Usage
 
+`.github/workflows/approved-by.yml`:
+
 ```yml
 name: Approved by
 
@@ -17,17 +19,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@v4
         id: cache
         with:
           path: cache.json
           key: usernames-${{ hashFiles('cache.json') }}
           restore-keys: usernames-
 
-      - uses: advbet/approved-by-action@v1
+      - uses: advbet/approved-by-action@v2
 
-      - uses: actions/cache/save@v3
-        if: endsWith(steps.cache.outputs.cache-matched-key, hashFiles('cache.json')) == false
+      - uses: actions/cache/save@v4
+        if: hashFiles('cache.json') != '' && endsWith(steps.cache.outputs.cache-matched-key, hashFiles('cache.json')) == false
         with:
           path: cache.json
           key: usernames-${{ hashFiles('cache.json') }}

@@ -1,4 +1,4 @@
-name: 'Approved by'
+name: "Approved by"
 description: 'Adds "Approved by" to PR description'
 
 inputs:
@@ -8,5 +8,5 @@ inputs:
     required: false
 
 runs:
-  using: 'node22'
-  main: 'dist/index.js'
+  using: "node24"
+  main: "dist/index.js"
