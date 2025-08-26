@@ -5,6 +5,8 @@ In combination with "Default commit message -> Default to pull request title and
 
 ## Usage
 
+`.github/workflows/approved-by.yml`:
+
 ```yml
 name: Approved by
 
