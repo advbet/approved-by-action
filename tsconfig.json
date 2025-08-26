@@ -1,29 +1,22 @@
 {
   "compilerOptions": {
-    // Environment setup & latest features
-    "lib": ["ESNext"],
-    "target": "ESNext",
-    "module": "Preserve",
-    "moduleDetection": "force",
-    "jsx": "react-jsx",
-    "allowJs": true,
+    /* Base Options */
+    "target": "es2020",                      // The JS version to compile to. `es2020` is safe for Node.js 20.
+    "module": "commonjs",                   // The module system used by Node.js.
+    "outDir": "./dist",                     // Where to put the compiled JavaScript files.
+    "rootDir": "./src",                     // Where your TypeScript source code is.
+    "sourceMap": true,                      // Helps with debugging.
 
-    // Bundler mode
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
+    /* Strict Type-Checking Options */
+    "strict": true,                         // Enables all strict type-checking options.
 
-    // Best practices
-    "strict": true,
-    "skipLibCheck": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
+    /* Module Resolution Options */
+    "esModuleInterop": true,                // Allows better compatibility between CommonJS and ES modules.
 
-    // Some stricter flags (disabled by default)
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    /* Advanced Options */
+    "skipLibCheck": true,                   // Skip type checking of declaration files.
+    "forceConsistentCasingInFileNames": true// Ensures file casing is consistent.
+  },
+  "include": ["src/**/*.ts"],               // Tells TypeScript to only compile files in the 'src' directory.
+  "exclude": ["node_modules"]               // Ignores the node_modules folder.
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it, spyOn, mock, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import * as core from "@actions/core";
 import {
   getApprovedReviews,
@@ -33,8 +33,12 @@ describe("getting approvals from reviews", () => {
     ];
     expect(getApprovedReviews(reviews as Reviews)).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ user: expect.objectContaining({ login: "test2" }) }),
-        expect.objectContaining({ user: expect.objectContaining({ login: "test1" }) }),
+        expect.objectContaining({
+          user: expect.objectContaining({ login: "test2" }),
+        }),
+        expect.objectContaining({
+          user: expect.objectContaining({ login: "test1" }),
+        }),
       ]),
     );
   });
@@ -52,7 +56,9 @@ describe("getting approvals from reviews", () => {
     ];
     expect(getApprovedReviews(reviews as Reviews)).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ user: expect.objectContaining({ login: "test1" }) }),
+        expect.objectContaining({
+          user: expect.objectContaining({ login: "test1" }),
+        }),
       ]),
     );
   });
@@ -84,7 +90,9 @@ describe("getting approvals from reviews", () => {
     ];
     expect(getApprovedReviews(reviews as Reviews)).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ user: expect.objectContaining({ login: "test1" }) }),
+        expect.objectContaining({
+          user: expect.objectContaining({ login: "test1" }),
+        }),
       ]),
     );
   });
@@ -112,9 +120,7 @@ describe("setting Approved-by", () => {
   it("should get username with name", () => {
     const body = "Test";
     const reviewers: RecursivePartial<Reviewers> = [{ username: "test1", name: "Test Tester" }];
-    expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe(
-      "Test\n\nApproved-by: test1 (Test Tester)",
-    );
+    expect(getBodyWithApprovedBy(body, reviewers as Reviewers)).toBe("Test\n\nApproved-by: test1 (Test Tester)");
   });
 
   it("should handle empty name", () => {
@@ -145,13 +151,15 @@ describe("getting reviewer", () => {
     const cache = {};
 
     mockOctokit.rest.users.getByUsername.mockResolvedValue({
-      data: { name: "Mocked Name 1" }
+      data: { name: "Mocked Name 1" },
     });
 
     const result = await getReviewer(mockOctokit, "test1", cache);
     expect(result).toEqual({ name: "Mocked Name 1", username: "test1" });
     expect(cache).toEqual({ test1: "Mocked Name 1" });
-    expect(mockOctokit.rest.users.getByUsername).toHaveBeenCalledWith({ username: "test1" });
+    expect(mockOctokit.rest.users.getByUsername).toHaveBeenCalledWith({
+      username: "test1",
+    });
   });
 
   it("should get user with cache present", async () => {
@@ -166,7 +174,7 @@ describe("getting reviewer", () => {
     const cache = { test3: "Cached Name 3" };
 
     mockOctokit.rest.users.getByUsername.mockResolvedValue({
-      data: { name: "Mocked Name 3" }
+      data: { name: "Mocked Name 3" },
     });
 
     const result = await getReviewer(mockOctokit, "test3", cache);
@@ -179,7 +187,7 @@ describe("getting reviewer", () => {
     const cache = {};
 
     mockOctokit.rest.users.getByUsername.mockResolvedValue({
-      data: { name: "Mocked Name 4" }
+      data: { name: "Mocked Name 4" },
     });
 
     let result = await getReviewer(mockOctokit, "test4", cache);
@@ -198,7 +206,7 @@ describe("getting reviewer", () => {
     const cache = {};
 
     mockOctokit.rest.users.getByUsername.mockResolvedValue({
-      data: { name: "" }
+      data: { name: "" },
     });
 
     const result = await getReviewer(mockOctokit, "test5", cache);
@@ -210,7 +218,7 @@ describe("getting reviewer", () => {
     const cache = {};
 
     mockOctokit.rest.users.getByUsername.mockResolvedValue({
-      data: { name: null }
+      data: { name: null },
     });
 
     const result = await getReviewer(mockOctokit, "test6", cache);

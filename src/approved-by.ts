@@ -1,8 +1,8 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import * as fs from "fs";
+import type { GitHub } from "@actions/github/lib/utils";
 import type { components } from "@octokit/openapi-types";
-import { GitHub } from "@actions/github/lib/utils";
+import * as fs from "fs";
 
 export type Octokit = InstanceType<typeof GitHub>;
 export type Review = components["schemas"]["pull-request-review"];
@@ -26,11 +26,7 @@ export function getApprovedReviews(reviews: Reviews): Reviews {
   return latestReviews.filter((review) => review.state.toLowerCase() === "approved");
 }
 
-export async function getReviewers(
-  octokit: Octokit,
-  reviews: Reviews,
-  cache: Cache,
-): Promise<Reviewers> {
+export async function getReviewers(octokit: Octokit, reviews: Reviews, cache: Cache): Promise<Reviewers> {
   const reviewers: Reviewers = [];
 
   for (const review of reviews) {
@@ -43,18 +39,16 @@ export async function getReviewers(
   return reviewers;
 }
 
-export async function getReviewer(
-  octokit: Octokit,
-  username: string,
-  cache: Cache,
-): Promise<Reviewer> {
+export async function getReviewer(octokit: Octokit, username: string, cache: Cache): Promise<Reviewer> {
   const reviewer = { username } as Reviewer;
 
   if (username in cache) {
     reviewer.name = cache[username] || "unknown";
   } else {
     core.info(`API call to get ${username} name`);
-    const { data: user } = await octokit.rest.users.getByUsername({ username: username });
+    const { data: user } = await octokit.rest.users.getByUsername({
+      username: username,
+    });
 
     if (user) {
       reviewer.name = user.name || "";
