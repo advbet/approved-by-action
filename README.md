@@ -16,7 +16,7 @@ on:
 
 jobs:
   approved-by:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
 
     steps:
       - uses: actions/cache/restore@v4
