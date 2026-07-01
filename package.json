@@ -8,7 +8,7 @@
     "lint:fix": "biome check --fix"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.15",
+    "@biomejs/biome": "2.5.1",
     "@types/bun": "latest"
   },
   "peerDependencies": {
